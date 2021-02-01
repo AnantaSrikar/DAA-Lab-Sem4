@@ -39,6 +39,8 @@ int main()
 	for(int i = 0; i < chars_in_file; i++)
 		fscanf(inFPtr, "%c", &content[i]);
 
+	fclose(inFPtr);
+
 	for(int i = 0; i < chars_in_file; i++)
 	
 		if(content[i] == '\n')
