@@ -15,6 +15,7 @@ struct student
 	char *name;
 	int team_no;
 
+	struct student *prev;
 	struct student *next;
 };
 
@@ -23,6 +24,8 @@ typedef struct student student;
 int main()
 {
 	student *getLinkedList(FILE*);
+	void swap(student*, student*);
+
 	FILE *inFPtr = NULL;
 	
 	inFPtr = fopen("DAALab_Input1.txt", "r");
@@ -37,6 +40,8 @@ int main()
 	fclose(inFPtr);
 
 	student *temp = root;
+
+	swap(root -> next, root -> next -> next);
 
 	while (temp != NULL)
 	{
@@ -79,10 +84,16 @@ student *getLinkedList(FILE *inFPtr)
 				// Adding the new node to the linked list
 
 				if(head == NULL)
+				{
 					head = new_student;
+					head -> prev = NULL;
+				}
 
 				else
+				{
 					temp -> next = new_student;
+					new_student -> prev = temp;
+				}
 
 				temp = new_student;
 				temp -> next = NULL;
@@ -91,4 +102,40 @@ student *getLinkedList(FILE *inFPtr)
 	}
 
 	return head;
+}
+
+// Function to swap the whole node, instead of copying values
+void swap(student *node_1, student *node_2)
+{
+	// Step-1: Changing the previous link
+
+	if(node_1 -> prev != NULL)	// if the node isn't the first node
+		node_1 -> prev -> next = node_2;
+	
+	else;
+		// Do something here
+
+	node_2 -> prev -> next = node_1;
+
+	// Step-2: Changing the next link
+
+	if(node_2 -> next != NULL)	// if the node isn't the last node
+		node_2 -> next -> prev = node_1;
+	
+	else;
+		// Do something here if needed
+
+	// Step-3: Changing the links for the node itself
+
+	student *prev_1 = node_1 -> prev, *next_1 = node_1 -> next, *temp = node_1;
+
+	node_1 -> prev = node_2 -> prev;
+	node_1 -> next = node_2 -> next;
+	
+	node_2 -> prev = prev_1;
+	node_2 -> next = next_1;
+
+	// node_1 = node_2;
+
+	// node_2 = temp;
 }
