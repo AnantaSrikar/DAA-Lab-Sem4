@@ -41,7 +41,7 @@ int main()
 
 	student *temp = root;
 
-	swap(root -> next, root -> next -> next);
+	swap(root, root -> next);
 
 	while (temp != NULL)
 	{
@@ -107,35 +107,14 @@ student *getLinkedList(FILE *inFPtr)
 // Function to swap the whole node, instead of copying values
 void swap(student *node_1, student *node_2)
 {
-	// Step-1: Changing the previous link
+	char *temp_ht_no = node_1 -> ht_no, *temp_name = node_1 -> name;
+	int temp_team_no = node_1 -> team_no;
 
-	if(node_1 -> prev != NULL)	// if the node isn't the first node
-		node_1 -> prev -> next = node_2;
-	
-	else;
-		// Do something here
+	node_1 -> ht_no = node_2 -> ht_no;
+	node_1 -> name = node_2 -> name;
+	node_1 -> team_no = node_2 -> team_no;
 
-	node_2 -> prev -> next = node_1;
-
-	// Step-2: Changing the next link
-
-	if(node_2 -> next != NULL)	// if the node isn't the last node
-		node_2 -> next -> prev = node_1;
-	
-	else;
-		// Do something here if needed
-
-	// Step-3: Changing the links for the node itself
-
-	student *prev_1 = node_1 -> prev, *next_1 = node_1 -> next, *temp = node_1;
-
-	node_1 -> prev = node_2 -> prev;
-	node_1 -> next = node_2 -> next;
-	
-	node_2 -> prev = prev_1;
-	node_2 -> next = next_1;
-
-	// node_1 = node_2;
-
-	// node_2 = temp;
+	node_2 -> ht_no = temp_ht_no;
+	node_2 -> name = temp_name;
+	node_2 -> team_no = temp_team_no;
 }
