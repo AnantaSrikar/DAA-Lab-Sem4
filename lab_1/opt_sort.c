@@ -56,7 +56,6 @@ int main(int argc, char **argv)
 
 	// Function prototypes
 	student *getLinkedList(FILE*);
-	student *getMin_team_no(student*);
 
 	void selSort(student*, int);
 	void insSort(student*, int);
@@ -153,6 +152,9 @@ student *getLinkedList(FILE *inFPtr)
 // Function to swap the values inside the node efficiently
 void swap(student *node_1, student *node_2)
 {
+	// if(node_1 == node_2)
+	// 	return;
+	
 	char *temp_ht_no = node_1 -> ht_no, *temp_name = node_1 -> name;
 	int temp_team_no = node_1 -> team_no;
 
@@ -163,6 +165,17 @@ void swap(student *node_1, student *node_2)
 	node_2 -> ht_no = temp_ht_no;
 	node_2 -> name = temp_name;
 	node_2 -> team_no = temp_team_no;
+}
+
+// Function that works similar to a '=' operator, except for nodes
+void copyStudent(student *node_1, student *node_2)
+{
+	if(node_1 == node_2)
+		return;
+	
+	node_1 -> ht_no = node_2 -> ht_no;
+	node_1 -> name = node_2 -> name;
+	node_1 -> team_no = node_2 -> team_no;
 }
 
 // Function to get the address of the node having the minimum value wrt a field
@@ -228,6 +241,7 @@ void insSort(student *root, int field)
 	if(root == NULL || root -> next == NULL)
 		return;
 
+	student *search_val_node = (student*)malloc(sizeof(student));
 	student *temp_1 = root -> next;
 
 	while(temp_1 != NULL)
@@ -238,16 +252,17 @@ void insSort(student *root, int field)
 		{
 			case 1:
 			{
-				char *search_val = temp_1 -> ht_no;
+				copyStudent(search_val_node, temp_1);
 				int found = 0;
-
 
 				while(temp_2 != temp_1)
 				{
 					if(strcmp(temp_1 -> ht_no, temp_2 -> ht_no) < 0 && found == 0)
 					{
-						search_val = temp_2 -> ht_no;
-						temp_2 -> ht_no = temp_1 -> ht_no;
+
+						copyStudent(search_val_node, temp_2);						
+						copyStudent(temp_2, temp_1);
+
 						found = 1;
 						temp_2 = temp_2 -> next;
 					}
@@ -255,16 +270,12 @@ void insSort(student *root, int field)
 					else
 					{
 						if(found == 1)
-						{
-							char *temp = search_val;
-							search_val = temp_2 -> ht_no;
-							temp_2 -> ht_no = temp;
-						}
+							swap(temp_2, search_val_node);
 
 						temp_2 = temp_2 -> next;
 					}
 				}
-				temp_2 -> ht_no = search_val;
+				copyStudent(temp_2, search_val_node);
 				temp_1 = temp_1 -> next;
 
 				break;
@@ -272,16 +283,17 @@ void insSort(student *root, int field)
 
 			case 2:
 			{
-				char *search_val = temp_1 -> name;
+				copyStudent(search_val_node, temp_1);
 				int found = 0;
-
 
 				while(temp_2 != temp_1)
 				{
 					if(strcmp(temp_1 -> name, temp_2 -> name) < 0 && found == 0)
 					{
-						search_val = temp_2 -> name;
-						temp_2 -> name = temp_1 -> name;
+
+						copyStudent(search_val_node, temp_2);						
+						copyStudent(temp_2, temp_1);
+
 						found = 1;
 						temp_2 = temp_2 -> next;
 					}
@@ -289,16 +301,12 @@ void insSort(student *root, int field)
 					else
 					{
 						if(found == 1)
-						{
-							char *temp = search_val;
-							search_val = temp_2 -> name;
-							temp_2 -> name = temp;
-						}
+							swap(temp_2, search_val_node);
 
 						temp_2 = temp_2 -> next;
 					}
 				}
-				temp_2 -> name = search_val;
+				copyStudent(temp_2, search_val_node);
 				temp_1 = temp_1 -> next;
 
 				break;
@@ -306,16 +314,17 @@ void insSort(student *root, int field)
 
 			case 3:
 			{
-				int search_val = temp_1 -> team_no;
+				copyStudent(search_val_node, temp_1);
 				int found = 0;
-
 
 				while(temp_2 != temp_1)
 				{
 					if(temp_2 -> team_no > temp_1 -> team_no && found == 0)
 					{
-						search_val = temp_2 -> team_no;
-						temp_2 -> team_no = temp_1 -> team_no;
+
+						copyStudent(search_val_node, temp_2);						
+						copyStudent(temp_2, temp_1);
+
 						found = 1;
 						temp_2 = temp_2 -> next;
 					}
@@ -323,16 +332,12 @@ void insSort(student *root, int field)
 					else
 					{
 						if(found == 1)
-						{
-							int temp = search_val;
-							search_val = temp_2 -> team_no;
-							temp_2 -> team_no = temp;
-						}
+							swap(temp_2, search_val_node);
 
 						temp_2 = temp_2 -> next;
 					}
 				}
-				temp_2 -> team_no = search_val;
+				copyStudent(temp_2, search_val_node);
 				temp_1 = temp_1 -> next;
 
 				break;
@@ -342,6 +347,8 @@ void insSort(student *root, int field)
 				break;
 		}
 	}
+
+	free(search_val_node);
 }
 
 
