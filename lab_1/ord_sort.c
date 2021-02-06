@@ -281,9 +281,9 @@ void insSort(student *root)
 // Function to write the linked list into the output file
 void writeToFile(FILE *outFPtr, student *root)
 {
-	student *temp = root;
-
 	fprintf(outFPtr, "HT_NO NAME TEAM_NO\n");
+	
+	student *temp = root;
 
 	while(temp != NULL)
 	{

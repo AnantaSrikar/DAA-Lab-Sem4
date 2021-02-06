@@ -250,7 +250,7 @@ void insSort(student *root, int field)
 
 		switch(field)
 		{
-			case 1:
+			case 1: // For hall-ticket number
 			{
 				copyStudent(search_val_node, temp_1);
 				int found = 0;
@@ -281,7 +281,7 @@ void insSort(student *root, int field)
 				break;
 			}
 
-			case 2:
+			case 2: // For name
 			{
 				copyStudent(search_val_node, temp_1);
 				int found = 0;
@@ -312,7 +312,7 @@ void insSort(student *root, int field)
 				break;
 			}
 
-			case 3:
+			case 3: // For team number
 			{
 				copyStudent(search_val_node, temp_1);
 				int found = 0;
@@ -355,6 +355,8 @@ void insSort(student *root, int field)
 // Function to write the linked list into the output file
 void writeToFile(FILE *outFPtr, student *root)
 {
+	fprintf(outFPtr, "HT_NO NAME TEAM_NO\n");
+	
 	student *temp = root;
 
 	while(temp != NULL)
