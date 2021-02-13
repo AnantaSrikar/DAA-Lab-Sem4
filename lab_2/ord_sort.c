@@ -1,6 +1,6 @@
 /*
-	Program to sort a set of student records by considering a specified field (Hall Ticket
-	Number, Name, or Team Number) by using Merge Sort and Quick Sort techniques.
+	Program to sort a set of student records by considering the fields in a specific order (Team Number,
+	Hall ticket number and name) by using Merge Sort and Quick319 Sort techniques.
 
 	Author: Ananta Srikar
 */
@@ -10,7 +10,7 @@
 #include<string.h>
 #include<ctype.h>
 
-// Doubly linked list
+// Singly linked list
 struct student
 {
 	char *ht_no;
@@ -27,26 +27,23 @@ int main(int argc, char **argv)
 {
 	// Initial code to get all command line values
 
-	if(argc != 3)
+	if(argc != 2)
 	{
 		printf("Wrong number of arguments. Please go through README.md");
 		return -1;
 	}
 
-	for(int i = 1; i <= 2; i++)
-	{
-		for(int j = 0; j < strlen(argv[i]); j++)
-			if(!isdigit(argv[i][j]))
-			{
-				printf("Invalid arguments! Please go through README.md"); // Enter only numbers!
-				return -1;
-			}
-	}
+	
+	for(int j = 0; j < strlen(argv[1]); j++)
+		if(!isdigit(argv[1][j]))
+		{
+			printf("Invalid arguments! Please go through README.md"); // Enter only numbers!
+			return -1;
+		}
 
 	int sort_meth = atoi(argv[1]);
-	int field = atoi(argv[2]);
 
-	if(!(sort_meth == 1 || sort_meth == 2) || !(field >= 1 && field <= 3))
+	if(!(sort_meth == 1 || sort_meth == 2))
 	{
 		printf("Invalid numbers entered. Please go through README.md");
 		return -1;
@@ -58,8 +55,8 @@ int main(int argc, char **argv)
 	// Function prototypes
 	student *getLinkedList(FILE*);
 
-	student *mergeSort(student*, int);
-	void quickSort(student*, int);
+	student *mergeSort(student*);
+	void quickSort(student*);
 	
 	void writeToFile(FILE*, student*);
 
@@ -84,11 +81,11 @@ int main(int argc, char **argv)
 	switch(sort_meth)
 	{
 	case 1:
-			root = mergeSort(root, field);
+			root = mergeSort(root);
 			break;
 
 	case 2:
-			quickSort(root, field);
+			quickSort(root);
 			break;
 
 	default:
@@ -159,6 +156,7 @@ student *getLinkedList(FILE *inFPtr)
 // Function to swap the values inside the node efficiently
 void swapNodes(student *node_1, student *node_2)
 {
+	// No need to swap if its the same node
 	if(node_1 == node_2)
 		return;
 	
@@ -193,43 +191,31 @@ student *split(student *root)
 	return temp;
 }
 
-// Merge Routing for mergeSort
-student *mergeRoutine(student *left, student *right, int field)
+student *mergeRoutine(student *left, student *second)
 { 
 	// If left linked list is empty 
 	if (left == NULL)
-		return right;
+		return second;
 
-	// If right linked list is empty 
-	if (right == NULL)
+	// If second linked list is empty 
+	if (second == NULL)
 		return left;
 
 	int isSmol = 0;
 
-	switch (field)
-	{
-		case 1:
-				if(strcmp(left -> ht_no, right -> ht_no) < 0)
-					isSmol = 1;
-				break;
+	if((left -> team_no) < (second -> team_no))
+		isSmol = 1;
 
-		case 2:
-				if(strcmp(left -> name, right -> name) < 0)
-					isSmol = 1;
-				break;
-		case 3:
-				if((left -> team_no) < (right -> team_no))
-					isSmol = 1;
-				break;
-		
-		default:
-			break;
-	}
+	else if((left -> team_no) == (second -> team_no) && strcmp(left -> ht_no, second -> ht_no) < 0)
+		isSmol = 1;
+	
+	else if((left -> team_no) == (second -> team_no) && strcmp(left -> ht_no, second -> ht_no) == 0 && strcmp(left -> name, second -> name) == 0)
+		isSmol = 1;
 
 	// Pick the smaller value 
 	if (isSmol)
 	{ 
-		left -> next = mergeRoutine(left -> next, right, field);
+		left -> next = mergeRoutine(left -> next, second);
 		left -> next -> prev = left;
 		left -> prev = NULL;
 		return left;
@@ -237,26 +223,26 @@ student *mergeRoutine(student *left, student *right, int field)
 
 	else
 	{ 
-		right -> next = mergeRoutine(left, right -> next, field);
-		right -> next -> prev = right;
-		right -> prev = NULL;
-		return right;
+		second -> next = mergeRoutine(left, second -> next);
+		second -> next -> prev = second;
+		second -> prev = NULL;
+		return second;
 	}
 }
 
-student *mergeSort(student *root, int field)
+student *mergeSort(student *root)
 {
 	if(root == NULL || root -> next == NULL)
 		return root;
 		
-	student *right = split(root);
+	student *second = split(root);
 
 	// Recurring for left and right halves
-	root = mergeSort(root, field);
-	right = mergeSort(right, field);
+	root = mergeSort(root);
+	second = mergeSort(second);
 
 	// Merge the two sorted halves
-	return mergeRoutine(root, right, field);
+	return mergeRoutine(root, second);
 }
 
 // Helper functions for Quick Sort
@@ -274,7 +260,7 @@ student *lastNode(student *root)
 	position in sorted dll, and places all smaller (smaller than pivot) to left
 	of pivot and all greater elements to right of pivot.
 */
-student* partition(student *front, student *last, int field)
+student* partition(student *front, student *last)
 {
 	// set pivot as last element
 
@@ -284,29 +270,18 @@ student* partition(student *front, student *last, int field)
 	
 	while(temp_1 != last)
 	{
-		switch (field)
-		{
-			case 1:
-					if(strcmp(temp_1 -> ht_no, pivot -> ht_no) < 0)
-						swap = 1;
-					else
-						swap = 0;
-					break;
+		if((temp_1 -> team_no) < (pivot -> team_no))
+			swap = 1;
 
-			case 2:
-					if(strcmp(temp_1 -> name, pivot -> name) < 0)
-						swap = 1;
-					else
-						swap = 0;
-					break;
-			case 3:
-					if((temp_1 -> team_no) < (pivot -> team_no))
-						swap = 1;
-					else
-						swap = 0;
-					break;
-		}
+		else if((temp_1 -> team_no) == (pivot -> team_no) && strcmp(temp_1 -> ht_no, pivot -> ht_no) < 0)
+			swap = 1;
+		
+		else if((temp_1 -> team_no) == (pivot -> team_no) && strcmp(temp_1 -> ht_no, pivot -> ht_no) == 0 && strcmp(temp_1 -> name, pivot -> name) == 0)
+			swap = 1;
 
+		else
+			swap = 0;
+		
 		if (swap)
 		{
 			if(temp_2 == NULL)
@@ -330,22 +305,23 @@ student* partition(student *front, student *last, int field)
 }
 
 /* A recursive implementation of quicksort for linked list */
-void recQuickSort(student *front, student *last, int field)
+void recQuickSort(student *front, student *last)
 {
 	if (last != NULL && front != last && front != last -> next)
 	{
-		student *part = partition(front, last, field);
-		recQuickSort(front, part -> prev, field);
-		recQuickSort(part -> next, last, field);
+		student *part = partition(front, last);
+		recQuickSort(front, part -> prev);
+		recQuickSort(part -> next, last);
 	}
 }
 
 // The main function to sort a linked list.
-void quickSort(student *head, int field)
+void quickSort(student *head)
 {
 	// Call the recursive QuickSort
-	recQuickSort(head, lastNode(head), field);
+	recQuickSort(head, lastNode(head));
 }
+
 
 // Function to write the linked list into the output file
 void writeToFile(FILE *outFPtr, student *root)

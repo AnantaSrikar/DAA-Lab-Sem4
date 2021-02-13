@@ -1,6 +1,6 @@
 /*
-	Program to sort a set of student records by considering a specified field (Hall Ticket
-	Number, Name, or Team Number) by using Selection Sort and Insertion Sort techniques.
+	Program to sort a set of student records by considering the fields in a specific order (Team Number,
+	Hall ticket number and name) by using Selection Sort and Insertion Sort techniques.
 
 	Author: Ananta Srikar
 */
