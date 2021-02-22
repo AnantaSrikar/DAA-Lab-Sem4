@@ -1,6 +1,6 @@
 /*
-	Program to sort a set of student records by considering the fields in a specific order (Team Number,
-	Hall ticket number and name) by using Merge Sort and Quick319 Sort techniques.
+	Program to search in a set of student records by considering a specified field (Hall Ticket
+	Number, Name, or Team Number) by using binary search techniques.
 
 	Author: Ananta Srikar
 */
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 }
 
 
-// Function to get a linked list from the contents of the input file
+// Function to get a doubly linked list from the contents of the input file
 student *getLinkedList(FILE *inFPtr)
 {
 	student *head = NULL, *temp, *new_student;

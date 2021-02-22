@@ -1,6 +1,6 @@
 /*
-	Program to sort a set of student records by considering a specified field (Hall Ticket
-	Number, Name, or Team Number) by using Merge Sort and Quick Sort techniques.
+	Program to search in a set of student records by considering a specified field (Hall Ticket
+	Number, Name, or Team Number) by using Linear search techniques.
 
 	Author: Ananta Srikar
 */
