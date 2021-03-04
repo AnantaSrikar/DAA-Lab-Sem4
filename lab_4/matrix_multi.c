@@ -118,27 +118,19 @@ int **normal_matrix_multi(int **A, int **B, int size)
 	int **C = get_zero_array(size);
 
 	for(int i = 0; i < size; i++)
-	{
 		for(int j = 0; j < size; j++)
 			for(int k = 0; k < size; k++)
-			{
 				C[i][j] += A[i][k] * B[j][k];
-			}
-	}
 
 	return C;
 }
 
 void normal_matrix_multi1(int **A, int **B, int **C, int i_start, int j_start, int blk_size)
 {
-	for(int i = 0; i < i_start + blk_size; i++)
-	{
-		for(int j = 0; j < j_start + blk_size; j++)
-			for(int k = 0; k < i_start + blk_size; k++)
-			{
+	for(int i = i_start; i < i_start + blk_size; i++)
+		for(int j = j_start; j < j_start + blk_size; j++)
+			for(int k = j_start; k < j_start + blk_size; k++)
 				C[i][j] += A[i][k] * B[j][k];
-			}
-	}
 }
 
 int **matrix_multi(int **A, int **B, int size, int blk_size)
@@ -146,12 +138,8 @@ int **matrix_multi(int **A, int **B, int size, int blk_size)
 	int **C = get_zero_array(size);
 
 	for(int i = 0; i < size; i += blk_size)
-	{
 		for(int j = 0; j < size; j += blk_size)
-		{
 			normal_matrix_multi1(A, B, C, i, j, blk_size);
-		}
-	}
 
 	return C;
 }
