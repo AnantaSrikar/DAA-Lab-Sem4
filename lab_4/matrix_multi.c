@@ -1,70 +1,93 @@
 /*
 	Author: Ananta Srikar
+
+	Program to multiply two square-matrices of order 1024 X 1024 using Block Matrix Multiplication
+	algorithm by considering block sizes: 4, 8, 16, 32, and 64.
 */
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
+#include<ctype.h>
+#include <sys/time.h>
 
-int main()
+int main(int argc, char **argv)
 {
+	// Initial code to get all command line values
+	
+	if(argc != 2)
+	{
+		printf("Incorrect number of arguments! Please go through README.md\n");
+		return -1;
+	}
+
+	for(int j = 0; j < strlen(argv[1]); j++)
+		if(!isdigit(argv[1][j]))
+		{
+			printf("Invalid arguments! Please go through README.md"); // Enter only numbers!
+			return -1;
+		}
+
+	// Block size taken in from command line
+	const int block_size = atoi(argv[1]);
+
+	// Checking for only allowed block sizes
+	if(!(block_size == 4 || block_size == 8 || block_size == 16 || block_size == 32 || block_size == 64))
+	{
+		printf("Invalid block size entered! Please go through README.md"); // Enter legit block size!
+		return -1;
+	}
+
+	// End of command line arguments
+
+	// vars to store timestamps to calculate exectuion time
+	struct timeval start, end_init, end_exec;
+
 	// Function prototypes
 	int **get_rand_array(int);
-	int **matrix_multi(int**, int**, int, int);
-	int **normal_matrix_multi(int**, int**, int);
+	int **block_matrix_multi(int**, int**, int, int);
+	void writeToFile(FILE*, int**, int**, int**, int);
 
-	// const int size = 1024;
-	const int size = 4;
+	// File handling
+	FILE *outFPtr = fopen("DAALab_output1.txt", "w");
+	
+	// fixed size of matrices
+	const int size = 1024;
 
+	// Getting start time for initialisation
+	gettimeofday(&start, NULL);
+
+	// Initializing two arrays of order 1024x1024 with random values
 	int **A = get_rand_array(size);
 	int **B = get_rand_array(size);
 
-	// int **C = normal_matrix_multi(A, B, size);
+	// End of initialisation time
+	gettimeofday(&end_init, NULL);
 
-	int **C = matrix_multi(A, B, size, 2);
-	int **D = normal_matrix_multi(A, B, size);
+	int **C = block_matrix_multi(A, B, size, block_size);
 
-	for(int i = 0; i < size; i++)
-	{
-		for(int j = 0; j < size; j++)
-			printf("%d ", A[i][j]);
+	// Time after executing the block matrix multiplication
+	gettimeofday(&end_exec, NULL);
 
-		printf("\n");
-	}
+	// Calulating times for initialisation and execution
+	float init_time = ((end_init.tv_sec * 1000000 + end_init.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+	float exec_time = ((end_exec.tv_sec * 1000000 + end_exec.tv_usec) - (end_init.tv_sec * 1000000 + end_init.tv_usec));
 
-	printf("\n");
+	init_time /= 1000000;
+	exec_time /= 1000000;
 
-	for(int i = 0; i < size; i++)
-	{
-		for(int j = 0; j < size; j++)
-			printf("%d ", B[i][j]);
+	// Writing all the matrices to the output file
+	writeToFile(outFPtr, A, B, C, size);
 
-		printf("\n");
-	}
+	printf("\nTime taken to initialise: %fs\n", init_time);
+	printf("Time taken to execute: %fs\n\n", exec_time);
 
-	printf("\n");
-
-
-	for(int i = 0; i < size; i++)
-	{
-		for(int j = 0; j < size; j++)
-			printf("%d ", C[i][j]);
-
-		printf("\n");
-	}
-
-	printf("\n");
-	
-	for(int i = 0; i < size; i++)
-	{
-		for(int j = 0; j < size; j++)
-			printf("%d ", D[i][j]);
-
-		printf("\n");
-	}
+	printf("Both the input matrices and their multiplied matrix is stored in 'DAALab_output1.txt'.\n");
 	
 	return(0);
 }
 
+// Function to convert a matrix into its transpose
 void transpose_matrix(int **X, int size)
 {
 	for(int i = 0; i < size; i++)
@@ -76,6 +99,7 @@ void transpose_matrix(int **X, int size)
 		}
 }
 
+// Function to get matrix with random numbers
 int **get_rand_array(int size)
 {
 	int **arr;
@@ -84,17 +108,18 @@ int **get_rand_array(int size)
 
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
+	
 	// Seeding the random number generator
-	// srand(0);
+	srand(0);
 
 	for(int i = 0; i < size; i++)
 		for(int j = 0; j < size; j++)
-			arr[i][j] = (i + j) % 5; // % 5 will make sure the numbers are in range after multiplying
-			// arr[i][j] = rand();
+			arr[i][j] = rand() % 10;
 
 	return arr;
 }
 
+// Function to get 0 matrix, which can be filled later
 int **get_zero_array(int size)
 {
 	int **arr;
@@ -103,8 +128,6 @@ int **get_zero_array(int size)
 
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
-	// Seeding the random number generator
-	// srand(0);
 
 	for(int i = 0; i < size; i++)
 		for(int j = 0; j < size; j++)
@@ -113,33 +136,66 @@ int **get_zero_array(int size)
 	return arr;
 }
 
-int **normal_matrix_multi(int **A, int **B, int size)
-{
-	int **C = get_zero_array(size);
-
-	for(int i = 0; i < size; i++)
-		for(int j = 0; j < size; j++)
-			for(int k = 0; k < size; k++)
-				C[i][j] += A[i][k] * B[j][k];
-
-	return C;
-}
-
-void normal_matrix_multi1(int **A, int **B, int **C, int i_start, int j_start, int blk_size)
+// Doing the actual matrix multi in the smaller block matrix
+void sub_matrix_multi(int **A, int **B, int **C, int i_start, int j_start, int k_start, int blk_size)
 {
 	for(int i = i_start; i < i_start + blk_size; i++)
 		for(int j = j_start; j < j_start + blk_size; j++)
-			for(int k = j_start; k < j_start + blk_size; k++)
+			for(int k = k_start; k < k_start + blk_size; k++)
 				C[i][j] += A[i][k] * B[j][k];
 }
 
-int **matrix_multi(int **A, int **B, int size, int blk_size)
+// Block matrix multiplication algorithm
+int **block_matrix_multi(int **A, int **B, int size, int blk_size)
 {
 	int **C = get_zero_array(size);
+	transpose_matrix(B, size);
 
 	for(int i = 0; i < size; i += blk_size)
 		for(int j = 0; j < size; j += blk_size)
-			normal_matrix_multi1(A, B, C, i, j, blk_size);
+			for(int k = 0; k < size; k += blk_size)
+				sub_matrix_multi(A, B, C, i, j, k, blk_size);
 
 	return C;
+}
+
+// Function to write the matrices into the output file
+void writeToFile(FILE *outFPtr, int **A, int **B, int **C, int size)
+{
+	// Transposing the matrix B back
+	transpose_matrix(B, size);
+
+	fprintf(outFPtr, "Matrix A: \n");
+
+	for(int i = 0; i < size; i++)
+	{
+		for(int j = 0; j < size; j++)
+			fprintf(outFPtr, "%d ", A[i][j]);
+
+		fprintf(outFPtr, "\n");
+	}
+
+	fprintf(outFPtr, "\n\n");
+
+	fprintf(outFPtr, "Matrix B: \n");
+
+	for(int i = 0; i < size; i++)
+	{
+		for(int j = 0; j < size; j++)
+			fprintf(outFPtr, "%d ", B[i][j]);
+
+		fprintf(outFPtr, "\n");
+	}
+
+	fprintf(outFPtr, "\n\n");
+
+	fprintf(outFPtr, "Matrix C: \n");
+
+	for(int i = 0; i < size; i++)
+	{
+		for(int j = 0; j < size; j++)
+			fprintf(outFPtr, "%d ", C[i][j]);
+
+		fprintf(outFPtr, "\n");
+	}
 }
