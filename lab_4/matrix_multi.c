@@ -13,14 +13,15 @@ int main()
 	int **normal_matrix_multi(int**, int**, int);
 
 	// const int size = 1024;
-	const int size = 1024;
+	const int size = 4;
 
 	int **A = get_rand_array(size);
 	int **B = get_rand_array(size);
 
-	int **C = normal_matrix_multi(A, B, size);
+	// int **C = normal_matrix_multi(A, B, size);
 
-	// int **C = matrix_multi(A, B, size, 2);
+	int **C = matrix_multi(A, B, size, 2);
+	int **D = normal_matrix_multi(A, B, size);
 
 	for(int i = 0; i < size; i++)
 	{
@@ -47,6 +48,16 @@ int main()
 	{
 		for(int j = 0; j < size; j++)
 			printf("%d ", C[i][j]);
+
+		printf("\n");
+	}
+
+	printf("\n");
+	
+	for(int i = 0; i < size; i++)
+	{
+		for(int j = 0; j < size; j++)
+			printf("%d ", D[i][j]);
 
 		printf("\n");
 	}
@@ -102,21 +113,6 @@ int **get_zero_array(int size)
 	return arr;
 }
 
-// int **matrix_multi(int **A, int **B, int size, int blk_size)
-// {
-// 	int **C = get_rand_array(size);
-
-// 	for(int i = 0; i < size; i += blk_size)
-// 	{
-// 		for(int j = 0; j < size; j += blk_size)
-// 		{
-			
-// 		}
-// 	}
-
-// 	return C;
-// }
-
 int **normal_matrix_multi(int **A, int **B, int size)
 {
 	int **C = get_zero_array(size);
@@ -128,6 +124,33 @@ int **normal_matrix_multi(int **A, int **B, int size)
 			{
 				C[i][j] += A[i][k] * B[j][k];
 			}
+	}
+
+	return C;
+}
+
+void normal_matrix_multi1(int **A, int **B, int **C, int i_start, int j_start, int blk_size)
+{
+	for(int i = 0; i < i_start + blk_size; i++)
+	{
+		for(int j = 0; j < j_start + blk_size; j++)
+			for(int k = 0; k < i_start + blk_size; k++)
+			{
+				C[i][j] += A[i][k] * B[j][k];
+			}
+	}
+}
+
+int **matrix_multi(int **A, int **B, int size, int blk_size)
+{
+	int **C = get_zero_array(size);
+
+	for(int i = 0; i < size; i += blk_size)
+	{
+		for(int j = 0; j < size; j += blk_size)
+		{
+			normal_matrix_multi1(A, B, C, i, j, blk_size);
+		}
 	}
 
 	return C;
