@@ -1,4 +1,4 @@
-# Lab_2
+# Lab_3
 
 Consists of two files:
 1. `linear_search.c`: Program that uses linear search techniques to search in a given set of

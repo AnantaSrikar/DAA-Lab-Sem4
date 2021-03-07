@@ -9,7 +9,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
-#include <sys/time.h>
+#include<sys/time.h>
 
 int main(int argc, char **argv)
 {

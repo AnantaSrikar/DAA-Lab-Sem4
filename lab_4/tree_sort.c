@@ -1,6 +1,5 @@
 /*
-	Program to sort a set of student records by considering a specified field (Hall Ticket
-	Number, Name, or Team Number) by Tree Sort techniques.
+	Program to sort a set of student records by their Hall Ticket numbers using Tree Sort techniques.
 
 	Author: Ananta Srikar
 */
@@ -35,6 +34,7 @@ int main(int argc, char **argv)
 	inFPtr = fopen("DAALab_input1.txt", "r");
 	outFPtr = fopen("DAALab_output1.txt", "w");
 
+	// Checking for the existence of the input file
 	if(inFPtr == NULL)
 	{
 		fprintf(stderr, "File 'DAALab_input1.txt' doesn't exist, exiting...");
@@ -42,15 +42,16 @@ int main(int argc, char **argv)
 	}
 	// End of file I/O
 
+	// Creating the binary search tree
 	student *bin_search_tree = treeSort(inFPtr);
 
+	// Writing the in-order traversal of the created tree to the file
 	inOrderFileWrite(outFPtr, bin_search_tree);
 
 	return(0);
 }
 
-// Helper functions for get getBinarySortTree
-
+// Helper function for get getBinarySortTree
 void insertInTree(student **root, student *cur_node)
 {
 	if((*root) == NULL)
@@ -66,6 +67,7 @@ void insertInTree(student **root, student *cur_node)
 	}
 }
 
+// Function that returns a binary search tree
 student *treeSort(FILE *inFPtr)
 {
 	student *head = NULL, *temp, *new_student;
@@ -89,6 +91,7 @@ student *treeSort(FILE *inFPtr)
 	return head;
 }
 
+// Function to write the sorted binary tree to a file
 void inOrderFileWrite(FILE *outFPtr, student *node)
 {
 	if(node == NULL)

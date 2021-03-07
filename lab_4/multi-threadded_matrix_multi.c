@@ -2,7 +2,7 @@
 	Author: Ananta Srikar
 
 	Program to multiply two square-matrices of order 1024 X 1024 using Block Matrix Multiplication
-	algorithm by considering block sizes: 4, 8, 16, 32, and 64.
+	algorithm on multiple threads by considering block sizes: 4, 8, 16, 32, and 64.
 */
 
 #include<stdio.h>
@@ -142,6 +142,7 @@ void sub_matrix_multi(int **A, int **B, int **C, int i_start, int j_start, int k
 {
 	int i, j, k;
 
+	// Using openMP's pragma for multi-threading
 	#pragma omp parallel for private(i,j,k) shared(A,B,C)
 	for(i = i_start; i < i_start + blk_size; i++)
 		for(j = j_start; j < j_start + blk_size; j++)
@@ -157,6 +158,7 @@ int **block_matrix_multi(int **A, int **B, int size, int blk_size)
 
 	transpose_matrix(B, size);
 
+	// Using openMP's pragma for multi-threading
 	#pragma omp parallel for private(i,j,k) shared(A,B,C)
 	for(i = 0; i < size; i += blk_size)
 		for(j = 0; j < size; j += blk_size)
