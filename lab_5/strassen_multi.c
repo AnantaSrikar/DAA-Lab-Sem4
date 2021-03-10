@@ -3,8 +3,7 @@
 
 	TODO:
 		- Add comments
-		- change stdout to outFPtr
-		- fix SEGV
+		- fix RAM usage
 */
 
 #include<stdio.h>
@@ -18,6 +17,10 @@ int main(int argc, char **argv)
 	// vars to store timestamps to calculate exectuion time
 	struct timeval start, end_init, end_exec;
 
+	// Seeding the random number generator
+	// NOTE: seed it only ONCE in the code
+	srand(0);
+
 	// Function prototypes
 	int **get_rand_array(int);
 	int **strassen_matrix_multi(int**, int**, int);
@@ -27,7 +30,7 @@ int main(int argc, char **argv)
 	FILE *outFPtr = fopen("DAALab_output1.txt", "w");
 	
 	// fixed size of matrices
-	const int size = 4;
+	const int size = 512;
 
 	// Getting start time for initialisation
 	gettimeofday(&start, NULL);
@@ -71,9 +74,6 @@ int **get_rand_array(int size)
 
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
-	
-	// Seeding the random number generator
-	srand(0);
 
 	for(int i = 0; i < size; i++)
 		for(int j = 0; j < size; j++)
@@ -159,15 +159,18 @@ int **strassen_matrix_multi(int **A, int **B, int size)
 	int ***split_A = split(A, size);
 	int ***split_B = split(B, size);
 
+
+
 	int new_size = size / 2;
 
 	int **p1 = strassen_matrix_multi(split_A[0], sub_matrices(split_B[1], split_B[3], new_size), new_size);
 	int **p2 = strassen_matrix_multi(add_matrices(split_A[0], split_A[1], new_size), split_B[3], new_size);
-	int **p3 = strassen_matrix_multi(add_matrices(split_A[3], split_A[4], new_size), split_B[0], new_size);
-	int **p4 = strassen_matrix_multi(split_A[4], sub_matrices(split_B[3], split_B[0], new_size), new_size);
-	int **p5 = strassen_matrix_multi(add_matrices(split_A[0], split_A[4], new_size), add_matrices(split_B[0], split_B[3], new_size), new_size);
-	int **p6 = strassen_matrix_multi(sub_matrices(split_A[1], split_A[4], new_size), add_matrices(split_B[3], split_B[3], new_size), new_size);
-	int **p7 = strassen_matrix_multi(sub_matrices(split_A[0], split_A[3], new_size), add_matrices(split_B[0], split_B[1], new_size), new_size);
+	int **p3 = strassen_matrix_multi(add_matrices(split_A[2], split_A[3], new_size), split_B[0], new_size);
+	int **p4 = strassen_matrix_multi(split_A[3], sub_matrices(split_B[2], split_B[0], new_size), new_size);
+	int **p5 = strassen_matrix_multi(add_matrices(split_A[0], split_A[3], new_size), add_matrices(split_B[0], split_B[3], new_size), new_size);
+	int **p6 = strassen_matrix_multi(sub_matrices(split_A[1], split_A[3], new_size), add_matrices(split_B[2], split_B[3], new_size), new_size);
+	int **p7 = strassen_matrix_multi(sub_matrices(split_A[0], split_A[2], new_size), add_matrices(split_B[0], split_B[1], new_size), new_size);
+	// printf("Subtricting for p7\n");
 
 	int **c11 = add_matrices(sub_matrices(add_matrices(p5, p4, new_size), p2, new_size), p6, new_size);
 	int **c12 = add_matrices(p1, p2, new_size);
@@ -194,37 +197,37 @@ int **strassen_matrix_multi(int **A, int **B, int size)
 // Function to write the matrices into the output file
 void writeToFile(FILE *outFPtr, int **A, int **B, int **C, int size)
 {
-	fprintf(stdout, "Matrix A: \n");
+	fprintf(outFPtr, "Matrix A: \n");
 
 	for(int i = 0; i < size; i++)
 	{
 		for(int j = 0; j < size; j++)
-			fprintf(stdout, "%d ", A[i][j]);
+			fprintf(outFPtr, "%d ", A[i][j]);
 
-		fprintf(stdout, "\n");
+		fprintf(outFPtr, "\n");
 	}
 
-	fprintf(stdout, "\n\n");
+	fprintf(outFPtr, "\n\n");
 
-	fprintf(stdout, "Matrix B: \n");
+	fprintf(outFPtr, "Matrix B: \n");
 
 	for(int i = 0; i < size; i++)
 	{
 		for(int j = 0; j < size; j++)
-			fprintf(stdout, "%d ", B[i][j]);
+			fprintf(outFPtr, "%d ", B[i][j]);
 
-		fprintf(stdout, "\n");
+		fprintf(outFPtr, "\n");
 	}
 
-	fprintf(stdout, "\n\n");
+	fprintf(outFPtr, "\n\n");
 
-	fprintf(stdout, "Matrix C: \n");
+	fprintf(outFPtr, "Matrix C: \n");
 
 	for(int i = 0; i < size; i++)
 	{
 		for(int j = 0; j < size; j++)
-			fprintf(stdout, "%d ", C[i][j]);
+			fprintf(outFPtr, "%d ", C[i][j]);
 
-		fprintf(stdout, "\n");
+		fprintf(outFPtr, "\n");
 	}
 }

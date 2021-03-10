@@ -43,6 +43,10 @@ int main(int argc, char **argv)
 	// vars to store timestamps to calculate exectuion time
 	struct timeval start, end_init, end_exec;
 
+	// Seeding the random number generator
+	// NOTE: seed it only ONCE in the code
+	srand(0);
+
 	// Function prototypes
 	int **get_rand_array(int);
 	int **block_matrix_multi(int**, int**, int, int);
@@ -108,9 +112,6 @@ int **get_rand_array(int size)
 
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
-	
-	// Seeding the random number generator
-	srand(0);
 
 	for(int i = 0; i < size; i++)
 		for(int j = 0; j < size; j++)
