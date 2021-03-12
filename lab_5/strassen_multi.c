@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	FILE *outFPtr = fopen("DAALab_output1.txt", "w");
 	
 	// fixed size of matrices
-	const int size = 512;
+	const int size = 1024;
 
 	// Getting start time for initialisation
 	gettimeofday(&start, NULL);
@@ -99,6 +99,20 @@ int **get_zero_array(int size)
 	return arr;
 }
 
+void free_matrix(int **X, int size)
+{
+	for(int i = 0; i < size; i++)
+		free(X[i]);
+		
+	free(X);
+}
+
+void free_split(int ***X, int size)
+{
+	for(int i = 0; i < 4; i++)
+		free_matrix(X[i], size);
+}
+
 int **add_matrices(int **A, int **B, int size)
 {
 	int **C = get_zero_array(size);
@@ -151,45 +165,91 @@ int **strassen_matrix_multi(int **A, int **B, int size)
 	int **C = get_zero_array(size);
 
 	if(size == 1)
-	{
 		C[0][0] = A[0][0] * B[0][0];
-		return C;
+
+	else
+	{
+		int ***split_A = split(A, size);
+		int ***split_B = split(B, size);
+
+		int new_size = size / 2;
+
+		int **a = sub_matrices(split_B[1], split_B[3], new_size);
+		int **b = add_matrices(split_A[0], split_A[1], new_size);
+		int **c = add_matrices(split_A[2], split_A[3], new_size);
+		int **d = sub_matrices(split_B[2], split_B[0], new_size);
+		int **e = add_matrices(split_A[0], split_A[3], new_size);
+		int **f = add_matrices(split_B[0], split_B[3], new_size);
+		int **g = sub_matrices(split_A[1], split_A[3], new_size);
+		int **h = add_matrices(split_B[2], split_B[3], new_size);
+		int **i = sub_matrices(split_A[0], split_A[2], new_size);
+		int **j = add_matrices(split_B[0], split_B[1], new_size);
+
+
+
+		int **p1 = strassen_matrix_multi(split_A[0], a, new_size);
+		int **p2 = strassen_matrix_multi(b, split_B[3], new_size);
+		int **p3 = strassen_matrix_multi(c, split_B[0], new_size);
+		int **p4 = strassen_matrix_multi(split_A[3], d, new_size);
+		int **p5 = strassen_matrix_multi(e, f, new_size);
+		int **p6 = strassen_matrix_multi(g, h, new_size);
+		int **p7 = strassen_matrix_multi(i, j, new_size);
+
+		int **ca = add_matrices(p5, p4, new_size);
+		int **cb = sub_matrices(ca, p2, new_size);
+		int **cc = add_matrices(p1, p5, new_size);
+		int **cd = sub_matrices(cc, p3, new_size);
+
+		int **c11 = add_matrices(cb, p6, new_size);
+		int **c12 = add_matrices(p1, p2, new_size);
+		int **c21 = add_matrices(p3, p4, new_size);
+		int **c22 = sub_matrices(cd, p7, new_size);
+
+		for(int i = 0; i < size; i++)
+			for(int j = 0; j < size; j++)
+				if(i < new_size && j < new_size)
+					C[i][j] = c11[i][j];
+
+				else if(i < new_size && j >= new_size)
+					C[i][j] = c12[i][j - new_size];
+
+				else if(i >= new_size && j < new_size)
+					C[i][j] = c21[i - new_size][j];
+
+				else if(i >= new_size && j >= new_size)
+					C[i][j] = c22[i - new_size][j - new_size];
+
+		free_split(split_A, new_size);
+		free_split(split_B, new_size);
+
+		free_matrix(a, new_size);
+		free_matrix(b, new_size);
+		free_matrix(c, new_size);
+		free_matrix(d, new_size);
+		free_matrix(e, new_size);
+		free_matrix(f, new_size);
+		free_matrix(g, new_size);
+		free_matrix(h, new_size);
+		free_matrix(i, new_size);
+		
+		free_matrix(p1, new_size);
+		free_matrix(p2, new_size);
+		free_matrix(p3, new_size);
+		free_matrix(p4, new_size);
+		free_matrix(p5, new_size);
+		free_matrix(p6, new_size);
+		free_matrix(p7, new_size);
+
+		free_matrix(c11, new_size);
+		free_matrix(c12, new_size);
+		free_matrix(c21, new_size);
+		free_matrix(c22, new_size);
+
+		free_matrix(ca, new_size);
+		free_matrix(cb, new_size);
+		free_matrix(cc, new_size);
+		free_matrix(cd, new_size);
 	}
-
-	int ***split_A = split(A, size);
-	int ***split_B = split(B, size);
-
-
-
-	int new_size = size / 2;
-
-	int **p1 = strassen_matrix_multi(split_A[0], sub_matrices(split_B[1], split_B[3], new_size), new_size);
-	int **p2 = strassen_matrix_multi(add_matrices(split_A[0], split_A[1], new_size), split_B[3], new_size);
-	int **p3 = strassen_matrix_multi(add_matrices(split_A[2], split_A[3], new_size), split_B[0], new_size);
-	int **p4 = strassen_matrix_multi(split_A[3], sub_matrices(split_B[2], split_B[0], new_size), new_size);
-	int **p5 = strassen_matrix_multi(add_matrices(split_A[0], split_A[3], new_size), add_matrices(split_B[0], split_B[3], new_size), new_size);
-	int **p6 = strassen_matrix_multi(sub_matrices(split_A[1], split_A[3], new_size), add_matrices(split_B[2], split_B[3], new_size), new_size);
-	int **p7 = strassen_matrix_multi(sub_matrices(split_A[0], split_A[2], new_size), add_matrices(split_B[0], split_B[1], new_size), new_size);
-	// printf("Subtricting for p7\n");
-
-	int **c11 = add_matrices(sub_matrices(add_matrices(p5, p4, new_size), p2, new_size), p6, new_size);
-	int **c12 = add_matrices(p1, p2, new_size);
-	int **c21 = add_matrices(p3, p4, new_size);
-	int **c22 = sub_matrices(sub_matrices(add_matrices(p1, p5, new_size), p3, new_size), p7, new_size);
-
-	for(int i = 0; i < size; i++)
-		for(int j = 0; j < size; j++)
-			if(i < new_size && j < new_size)
-				C[i][j] = c11[i][j];
-
-			else if(i < new_size && j >= new_size)
-				C[i][j] = c12[i][j - new_size];
-
-			else if(i >= new_size && j < new_size)
-				C[i][j] = c21[i - new_size][j];
-
-			else if(i >= new_size && j >= new_size)
-				C[i][j] = c22[i - new_size][j - new_size];
 
 	return C;
 }
