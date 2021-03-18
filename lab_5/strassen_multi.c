@@ -72,6 +72,8 @@ int **get_rand_array(int size)
 
 	arr = (int**)malloc(size * sizeof(int*));
 
+	// arr[0] = (int*)malloc(size * size * (sizeof(int)));
+
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
 
@@ -88,6 +90,7 @@ int **get_zero_array(int size)
 	int **arr;
 
 	arr = (int**)malloc(size * sizeof(int*));
+	// arr[0] = (int*)malloc(size * size * (sizeof(int)));
 
 	for(int i = 0; i < size; i++)
 		arr[i] = (int*)malloc(size * sizeof(int));
@@ -164,8 +167,23 @@ int **strassen_matrix_multi(int **A, int **B, int size)
 {
 	int **C = get_zero_array(size);
 
-	if(size == 1)
-		C[0][0] = A[0][0] * B[0][0];
+	if(size == 2)
+	{
+		int m1, m2, m3, m4, m5, m6, m7;
+
+		m1 = (A[0][0] + A[1][1]) * (B[0][0] + B[1][1]);
+		m2 = (A[1][0] + A[1][1]) * B[0][0];
+		m3 = A[0][0] * (B[0][1] - B[1][1]);
+		m4 = A[1][1] * (B[1][0] - B[0][0]);
+		m5 = (A[0][0] + A[0][1]) * B[1][1];
+		m6 = (A[1][0] - A[0][0]) * (B[0][0]+B[0][1]);
+		m7 = (A[0][1] - A[1][1]) * (B[1][0]+B[1][1]);
+
+		C[0][0] = m1 + m4- m5 + m7;
+		C[0][1] = m3 + m5;
+		C[1][0] = m2 + m4;
+		C[1][1] = m1 - m2 + m3 + m6;
+	}
 
 	else
 	{
