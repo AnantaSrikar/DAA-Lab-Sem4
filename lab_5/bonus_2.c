@@ -54,13 +54,9 @@ int main(int argc, char **argv)
 	// Function prototypes
 	int getMedian(int [], int [], int);
 
-	for(int i = 0; i < size; i++)
-		printf("%d ", arr_1[i]);
+	int median = getMedian(arr_1, arr_2, size);
 
-	printf("\n\n");
-
-	for(int i = 0; i < size; i++)
-		printf("%d ", arr_2[i]);
+	printf("Median = %d\n", median);
 
 	return(0);
 }
