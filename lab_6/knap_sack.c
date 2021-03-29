@@ -52,32 +52,41 @@ int main(int argc, char **argv)
 
 	// End of command line arguments
 
-	float p_by_w[size];
+	// Function prototypes
+	int wrapper_ith(float arr[], int, int);
+	float *getProfitVector(float[], float[], float[], int, int);
+
+	float p_by_w[size], net_profit = 0;
 
 	for(int i = 0; i < size; i++)
 		p_by_w[i] = profits[i] / weights[i];
 
-	for(int i = 0; i < size; i++)
-		printf("%f ", p_by_w[i]);
+	float *profit_vector = getProfitVector(weights, profits, p_by_w, size, M);
 
-	printf("\n\nM = %d", M);
-
-	int wrapper_ith(float arr[], int, int);
-
-	int ith_smol = wrapper_ith(p_by_w, size, 1);
-
-	printf("1st largest: %d\nThe whole profit vector:\n", ith_smol);
-
-	float *getProfitVector(float[], float[], int, int);
-
-	float *profit_vector = getProfitVector(weights, profits, size, M);
+	printf("\nProfit vector:\n[");
 	
 	for(int i = 0; i < size; i++)
-		printf("%f ", profit_vector[i]);
+		if(i == size - 1)
+			printf("%f]\n", profit_vector[i]);
+		else
+			printf("%f, ", profit_vector[i]);
 
-	printf("\n");
+	for(int i = 0; i < size; i++)
+		net_profit += profit_vector[i] * profits[i];
+
+	printf("\nNet Profit: %f\n", net_profit);
 
 	return(0);
+}
+
+int checkDuplicate(float arr[], int size)
+{
+	for(int i = 0; i < size; i++)
+		for(int j = 0; j < size; j++)
+			if((i != j) && arr[i] == arr[j])
+				return 0;
+
+	return 1;
 }
 
 void swap(float* a, float* b)
@@ -146,14 +155,16 @@ int wrapper_ith(float arr[], int size, int ith)
 	return index;
 }
 
-float *getProfitVector(float weights[], float profits[], int size, int M)
+float *getProfitVector(float weights[], float profits[], float p_by_w[], int size, int M)
 {
-	float p_by_w[size];
-
-	for(int i = 0; i < size; i++)
-		p_by_w[i] = profits[i] / weights[i];
+	if(!checkDuplicate(p_by_w, size))
+	{
+		printf("p by i ratios are same, please modify inputs and try again");
+		exit(0);
+	}
 
 	float *profit_vector = (float*)malloc(size * sizeof(float));
+
 	if(size == 1)
 	{
 		if(weights[0] > M)
@@ -173,8 +184,6 @@ float *getProfitVector(float weights[], float profits[], int size, int M)
 				break;
 
 			int index = wrapper_ith(p_by_w, size, i + 1);
-
-			printf("Got index: %d\n", index);
 
 			if(weights[index] > remaining)
 			{
