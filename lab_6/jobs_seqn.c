@@ -85,6 +85,16 @@ int main(int argc, char **argv)
 		else
 			printf("%d, ", profit_vector_index[i] + 1);
 
+	printf("\n\n");
+	
+	int net_profit = 0;
+
+	for(int i = 0; i < size; i++)
+		if(solution_vector[i] == 1)
+			net_profit += profits[i];
+
+	printf("Net profit = %d\n", net_profit);
+
 	return(0);
 }
 
