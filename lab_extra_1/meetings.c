@@ -1,7 +1,8 @@
 /*
 	Author: Ananta Srikar
 
-	TODO: Add comments
+	Program to find the maximum number of meetings that can be accommodated in the meeting
+	room when only one meeting can be held in the meeting room at a particular time.
 */
 
 #include<stdio.h>
@@ -59,20 +60,20 @@ int main(int argc, char **argv)
 
 	// End of command line arguments
 
+	// Function prototypes
 	void getMaxMeetings(int[], int[], int);
 
 	getMaxMeetings(start_time, end_time, size);
 
-	// Function prototypes
-
 	return(0);
 }
 
-void copyMeeting(meeting m1, meeting m2)
+// Function to copy the values of one meeting into another
+void copyMeeting(meeting *m1, meeting *m2)
 {
-	m1.start = m2.start;
-	m1.end = m2.end;
-	m1.pos = m2.pos;
+	m1 -> start = m2 -> start;
+	m1 -> end = m2 -> end;
+	m1 -> pos = m2 -> pos;
 }
 
 // Using merge sort for guaranteed time complexity O(Nlog(N))
@@ -87,9 +88,9 @@ void merge(meeting all_meetings[], int p, int q, int r)
 	meeting L[n1], M[n2];
 
 	for (int i = 0; i < n1; i++)
-		copyMeeting(L[i], all_meetings[p + i]);
+		copyMeeting(&L[i], &all_meetings[p + i]);
 	for (int j = 0; j < n2; j++)
-		copyMeeting(M[j], all_meetings[q + 1 + j]);
+		copyMeeting(&M[j], &all_meetings[q + 1 + j]);
 
 	// Maintain current index of sub-arrays and main array
 	int i, j, k;
@@ -103,13 +104,13 @@ void merge(meeting all_meetings[], int p, int q, int r)
 	{
 		if (L[i].end <= M[j].end)
 		{
-			copyMeeting(all_meetings[k], L[i]);
+			copyMeeting(&all_meetings[k], &L[i]);
 			i++;
 		}
 		
 		else
 		{
-			copyMeeting(all_meetings[k], M[j]);
+			copyMeeting(&all_meetings[k], &M[j]);
 			j++;
 		}
 		k++;
@@ -119,14 +120,14 @@ void merge(meeting all_meetings[], int p, int q, int r)
 	// pick up the remaining elements and put in A[p..r]
 	while (i < n1)
 	{
-		copyMeeting(all_meetings[k], L[i]);
+		copyMeeting(&all_meetings[k], &L[i]);
 		i++;
 		k++;
 	}
 
 	while (j < n2)
 	{
-		copyMeeting(all_meetings[k], M[j]);
+		copyMeeting(&all_meetings[k], &M[j]);
 		j++;
 		k++;
 	}
@@ -148,8 +149,20 @@ void mergeSort(meeting all_meetings[], int l, int r)
 	}
 }
 
+// Function to check if a meeting is in the list of confirmed meetings
+int in(int index, int indices[], int size)
+{
+	for(int i = 0; i < size; i++)
+		if(indices[i] == 1 && i == index)
+			return 1;
+
+	return 0;
+}
+
+// Function to print the max number of meetings (and the meetings) that should be held
 void getMaxMeetings(int start_time[], int end_time[], int size)
 {
+	int confirmed_meeting_index[size], cnt = 1;
 	meeting all_meetings[size];
 
 	for (int i = 0; i < size; i++)
@@ -161,11 +174,45 @@ void getMaxMeetings(int start_time[], int end_time[], int size)
 		all_meetings[i].end = end_time[i];
 		 
 		// Original position/index of meeting
-		all_meetings[i].pos = i + 1;
+		all_meetings[i].pos = i;
+
+		// Assigning all values to -1
+		confirmed_meeting_index[i] = -1;
 	}
 
+	// Sorting all meetings
 	mergeSort(all_meetings, 0, size - 1);
 
-	for(int i = 0; i < size; i++)
-		printf("%d ", all_meetings[i].end);
+	// The first meeting should happen for sure
+	confirmed_meeting_index[all_meetings[0].pos] = 1;
+
+	int time_limit = all_meetings[0].end;
+
+	// Check for all meeting whether it
+	// can be selected or not.
+	for (int i = 0; i < size; i++)
+	{
+		if (all_meetings[i].start >= time_limit)
+		{
+			// select this meeting
+			confirmed_meeting_index[all_meetings[i].pos] = 1;
+			
+			// Update time limit.
+			time_limit = all_meetings[i].end;
+
+			// Increase the count of the number of meeting that can take place
+			cnt++;
+		}
+	}
+
+	printf("%d\n", cnt);
+
+	// Printing the meetings that should be held
+	// printf("Meetings that should be held:\n");
+
+	// for(int i = 0; i < size; i++)
+	// 	if(in(all_meetings[i].pos, confirmed_meeting_index, size))
+	// 		printf("[%d, %d] ", all_meetings[i].start, all_meetings[i].end);
+
+	printf("\n");
 }
