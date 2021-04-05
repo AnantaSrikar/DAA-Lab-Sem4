@@ -1,8 +1,8 @@
 /*
 	Author: Ananta Srikar
 
-	Program to find the largest number of N digits that can be made with a
-	given sum of digits S.
+	Program to find the numeber of ways a person can climb N stairs,
+	when 1 or 2 stairs are climbed at a time.
 */
 
 #include<stdio.h>
@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 {
 	// Initial code to get all command line values
 	
-	if(argc != 3)
+	if(argc != 2)
 	{
 		printf("Incorrect number of arguments! Please go through README.md\n");
 		return -1;
@@ -35,44 +35,41 @@ int main(int argc, char **argv)
 	}
 
 	int N = input_arr[0];
-	int S = input_arr[1];
 
-	if(S > N * 9) // There would be no N digit number whose sum would be S
+	if(!(N > 0))
 	{
-		printf("-1");
-		return 0;
+		printf("Number of stairs can't be 0 or negative -_-\n");
+		return -1;
 	}
 
 	// End of command line arguments
 
 	// Function prototype
-	void find_password(int N, int S);
+	int getWaysToClimb(int);
 
-	find_password(N, S);
-
-	printf("\n");
+	printf("%d\n", getWaysToClimb(N));
 
 	return(0);
 }
 
-// Function to find the password. Time complexity: O(N)
-void find_password(int N, int S)
+// Function to find the number of ways to climb N stairs. Time complexity: O(N)
+// If observed closely, the pattern is the fibonacci series :)
+int getWaysToClimb(int N)
 {
-	for(int i = 0; i < N; i++)
-	{
-		if(S > 9)
-		{
-			printf("9");
-			S -= 9;
-		}
-		
-		else if(S != 0)
-		{
-			printf("%d", S);
-			S = 0;
-		}
+	int a = 1, b = 2, c = 3;
 
-		else
-			printf("0");
+	if(N == 1)
+		return a;
+	
+	else if(N == 2)
+		return b;
+	
+	for(int i = 3; i < N + 1; i++)
+	{
+		c = a + b;
+		a = b;
+		b = c;
 	}
+
+	return c;
 }
