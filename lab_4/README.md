@@ -25,7 +25,7 @@ The list of students is taken from the file `DAALab_input1.txt` (in the same wor
 The output is generated as the contents of the file `DAALab_output1.txt`, in the same working directory.
 
 #### Logic
-Used the tree sort algorithm to sort all the list of sutdents, according to the hall ticket number.
+Used the tree sort algorithm to sort all the list of students, according to the hall ticket number.
 
 The structure `student` used for generating the list has the following contents:
 - `char *ht_no`:Character pointer to store Hallticket number as a string.

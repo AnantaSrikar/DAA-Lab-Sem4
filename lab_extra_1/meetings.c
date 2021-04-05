@@ -10,7 +10,8 @@
 #include<string.h>
 #include<ctype.h>
 
-struct meeting {
+struct meeting
+{
 	int start;
 	int end;
 	int pos;
@@ -81,7 +82,7 @@ void copyMeeting(meeting *m1, meeting *m2)
 void merge(meeting all_meetings[], int p, int q, int r)
 {
 
-	// Create L ← A[p..q] and M ← A[q+1..r]
+	// Create L <- A[p..q] and M <- A[q+1..r]
 	int n1 = q - p + 1;
 	int n2 = r - q;
 
@@ -192,7 +193,7 @@ void getMaxMeetings(int start_time[], int end_time[], int size)
 	// can be selected or not.
 	for (int i = 0; i < size; i++)
 	{
-		if (all_meetings[i].start >= time_limit)
+		if (all_meetings[i].start > time_limit)
 		{
 			// select this meeting
 			confirmed_meeting_index[all_meetings[i].pos] = 1;
