@@ -64,6 +64,7 @@ file_char *getCharFreq(FILE *inFPtr)
 	typedef struct char_freq char_freq;
 
 	char_freq *temp, *root = NULL;
+	int char_cnt = 0;
 
 	int in(char ch, char_freq *root)
 	{
@@ -89,7 +90,12 @@ file_char *getCharFreq(FILE *inFPtr)
 			if(temp -> next == NULL)
 			{
 				temp -> next = (char_freq*)malloc(sizeof(char_freq));
+
+				temp -> next -> ch = ch;
 				temp -> next -> freq = 1;
+				temp -> next -> next = NULL;
+
+				break;
 			}
 			
 			temp = temp -> next;
@@ -118,14 +124,19 @@ file_char *getCharFreq(FILE *inFPtr)
 		fscanf(inFPtr, "%c", &ch);
 
 		if(!in(ch, root))
+		{
 			if(root == NULL)
 			{
 				root = (char_freq*)malloc(sizeof(char_freq));
 				root -> freq = 1;
+				root -> next = NULL;
 			}
 			
 			else
 				append(ch, root);
+
+			char_cnt++;
+		}
 
 		else
 			add_count(ch, root);
@@ -133,14 +144,17 @@ file_char *getCharFreq(FILE *inFPtr)
 
 	temp = root;
 
-	while(temp != NULL)
+	// TODO: do we need to sort them based on frequency, for building the binary tree?
+
+	file_char *file_char_root = (file_char*)malloc(char_cnt * sizeof(file_char));
+
+	for(int i = 0; i < char_cnt; i++, temp = temp -> next)
 	{
-		printf("Char: %c, freq: %d\n", temp -> ch, temp -> freq);
-		temp = temp -> next;
+		file_char_root[i].ch = temp -> ch;
+		file_char_root[i].freq = temp -> freq;
+		
+		printf("Char: '%c', freq: %d\n", file_char_root[i].ch, file_char_root[i].freq);
 	}
-
-
-	// void append_char(char_freq)
-
-	return NULL;
+	
+	return file_char_root;
 }
