@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	// End of command line arguments
 
 	// Function prototypes
-	file_char *getCharFreq(FILE*);
+	file_char *getCharFreq(FILE*, int*);
 
 	printf("File: %s\n", argv[1]);
 
@@ -45,15 +45,19 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	getCharFreq(inFPtr);
+	int char_num;
+	file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
+
+	printf("char_num = %d\n", char_num);
 
 	fclose(inFPtr);
 
 	return(0);
 }
 
-file_char *getCharFreq(FILE *inFPtr)
+file_char *getCharFreq(FILE *inFPtr, int *char_num)
 {
+	// Temporary linked list to hold the frequecies of all the words in a given file
 	struct char_freq
 	{
 		char ch;
@@ -66,6 +70,7 @@ file_char *getCharFreq(FILE *inFPtr)
 	char_freq *temp, *root = NULL;
 	int char_cnt = 0;
 
+	// Function to check if a given character is already in the linked list
 	int in(char ch, char_freq *root)
 	{
 		char_freq *temp = root;
@@ -81,6 +86,7 @@ file_char *getCharFreq(FILE *inFPtr)
 		return 0;
 	}
 
+	// Function to append a character to the linked list
 	void append(char ch, char_freq *root)
 	{
 		char_freq *temp = root;
@@ -102,6 +108,7 @@ file_char *getCharFreq(FILE *inFPtr)
 		}
 	}
 
+	// Function to increase the frequency count of a character in the linked list
 	void add_count(char ch, char_freq *root)
 	{
 		char_freq *temp = root;
@@ -118,11 +125,13 @@ file_char *getCharFreq(FILE *inFPtr)
 		}
 	}
 
+	// Iterating through all the characters in the file
 	while(!feof(inFPtr))
 	{
 		char ch;
 		fscanf(inFPtr, "%c", &ch);
 
+		// if the scanned character isn't in the liked list
 		if(!in(ch, root))
 		{
 			if(root == NULL)
@@ -142,19 +151,21 @@ file_char *getCharFreq(FILE *inFPtr)
 			add_count(ch, root);
 	}
 
+	// Saving the value of the number of unique chars
+	*char_num = char_cnt;
+
 	temp = root;
 
 	// TODO: do we need to sort them based on frequency, for building the binary tree?
 
 	file_char *file_char_root = (file_char*)malloc(char_cnt * sizeof(file_char));
 
+	// Copying all the frequencies into a array, since its easier to use :) (not the most efficient way but ok ¯\_(ツ)_/¯)
 	for(int i = 0; i < char_cnt; i++, temp = temp -> next)
 	{
 		file_char_root[i].ch = temp -> ch;
 		file_char_root[i].freq = temp -> freq;
-		
-		printf("Char: '%c', freq: %d\n", file_char_root[i].ch, file_char_root[i].freq);
 	}
-	
+
 	return file_char_root;
 }
