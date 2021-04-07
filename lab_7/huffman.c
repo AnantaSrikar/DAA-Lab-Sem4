@@ -1,7 +1,9 @@
 /*
 	Author: Ananta Srikar
 
-	TODO: Add comments
+	TODO: - Get the huffman tree node
+			write encoded bit string to file
+			implement decoding
 */
 
 #include<stdio.h>
@@ -125,6 +127,38 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 		}
 	}
 
+	void swap_nodes(char_freq *n1, char_freq *n2)
+	{
+		char temp_ch = n1 -> ch;
+		int temp_char_freq = n1 -> freq;
+
+		n1 -> ch = n2 -> ch;
+		n1 -> freq = n2 -> freq;
+
+		n2 -> ch = temp_ch;
+		n2 -> freq = temp_char_freq;
+	}
+
+	// Function to sort character frequency in increasing order
+	void sort_list(char_freq *root)
+	{
+		char_freq *temp1 = root, *temp2 = root;
+		
+		while(temp1 != NULL)
+		{
+			temp2 = root;
+
+			while(temp2 != NULL)
+			{
+				if(temp2 -> next != NULL && temp2 -> freq > temp2 -> next -> freq)
+					swap_nodes(temp2, temp2 -> next);
+				
+				temp2 = temp2 -> next;
+			}
+			temp1 = temp1 -> next;
+		}
+	}
+
 	// Iterating through all the characters in the file
 	while(!feof(inFPtr))
 	{
@@ -151,6 +185,9 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 			add_count(ch, root);
 	}
 
+	// Sorting the list
+	sort_list(root);
+
 	// Saving the value of the number of unique chars
 	*char_num = char_cnt;
 
@@ -166,6 +203,9 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 		file_char_root[i].ch = temp -> ch;
 		file_char_root[i].freq = temp -> freq;
 	}
+
+	for(int i = 0; i < char_cnt; i++)
+		printf("'%c': %d\n", file_char_root[i].ch, file_char_root[i].freq);
 
 	return file_char_root;
 }
