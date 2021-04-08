@@ -1,7 +1,7 @@
 /*
 	Author: Ananta Srikar
 
-	TODO: - Get the huffman tree node
+	TODO: - Fix missing first character
 			write encoded bit string to file
 			implement decoding
 */
@@ -11,13 +11,21 @@
 #include<string.h>
 #include<ctype.h>
 
+// Structure to store character frequencies
 struct file_char
 {
 	char ch;
 	int freq;
 };
 
+struct huff_code
+{
+	char ch;
+	char *code;
+};
+
 typedef struct file_char file_char;
+typedef struct huff_code huff_code;
 
 int main(int argc, char **argv)
 {
@@ -33,7 +41,8 @@ int main(int argc, char **argv)
 
 	// Function prototypes
 	file_char *getCharFreq(FILE*, int*);
-	void getHuffmanTree(file_char *, int);
+	huff_code *getHuffmanTree(file_char*, int);
+	void getBitString(FILE*, huff_code*, int);
 
 	printf("File: %s\n", argv[1]);
 
@@ -51,9 +60,14 @@ int main(int argc, char **argv)
 	int char_num;
 	file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
 
-	printf("char_num = %d\n", char_num);
+	printf("\n\nchar_num = %d\n\n", char_num);
 
-	getHuffmanTree(all_char_freqs, char_num);
+	huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num);
+
+	for(int i = 0; i < char_num; i++)
+		printf("'%c' = '%s'\n", all_codes[i].ch, all_codes[i].code);
+
+	getBitString(inFPtr, all_codes, char_num);
 
 	fclose(inFPtr);
 
@@ -196,8 +210,6 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 
 	temp = root;
 
-	// TODO: do we need to sort them based on frequency, for building the binary tree?
-
 	file_char *file_char_root = (file_char*)malloc(char_cnt * sizeof(file_char));
 
 	// Copying all the frequencies into a array, since its easier to use :) (not the most efficient way but ok ¯\_(ツ)_/¯)
@@ -214,7 +226,7 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 }
 
 
-void getHuffmanTree(file_char *all_char_freq, int size)
+huff_code *getHuffmanTree(file_char *all_char_freq, int size)
 {
 	// A Huffman tree node
 	struct MinHeapNode
@@ -426,7 +438,7 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 
 	// Prints huffman codes from the root of Huffman Tree.
 	// It uses arr[] to store codes
-	void printCodes(struct MinHeapNode* root, int arr[], int top)
+	void printCodes(struct MinHeapNode* root, int arr[], int top, huff_code all_codes[], int size)
 	{
 
 		// Assign 0 to left edge and recur
@@ -434,7 +446,7 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 		{
 
 			arr[top] = 0;
-			printCodes(root -> left, arr, top + 1);
+			printCodes(root -> left, arr, top + 1, all_codes, size);
 		}
 
 		// Assign 1 to right edge and recur
@@ -442,7 +454,7 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 		{
 
 			arr[top] = 1;
-			printCodes(root -> right, arr, top + 1);
+			printCodes(root -> right, arr, top + 1, all_codes, size);
 		}
 
 		// If this is a leaf node, then
@@ -451,18 +463,22 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 		// and its code from arr[]
 		if (isLeaf(root))
 		{
+			for(int i = 0; i < size; i++)
+				if(all_codes[i].ch == root -> data)
+				{
+					all_codes[i].code = (char*)malloc(top * sizeof(char));
 
-			printf("'%c': ", root -> data);
-			printArr(arr, top);
+					for(int j = 0; j < top; j++)
+						all_codes[i].code[j] = arr[j] + '0';
+				}
 		}
 	}
 
 	// The main function that builds a
 	// Huffman Tree and print codes by traversing
 	// the built Huffman Tree
-	void HuffmanCodes(char data[], int freq[], int size)
+	void HuffmanCodes(char data[], int freq[], int size, huff_code all_codes[])
 	{
-
 		// TODO: build data array and freq array for conversion
 		// Construct Huffman Tree
 		struct MinHeapNode* root = buildHuffmanTree(data, freq, size);
@@ -471,8 +487,10 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 		// the Huffman tree built above
 		int arr[100], top = 0;
 
-		printCodes(root, arr, top);
+		printCodes(root, arr, top, all_codes, size);
 	}
+
+	huff_code *all_codes = (huff_code*)malloc(size * sizeof(huff_code));
 
 	char data[size];
 	int freq[size];
@@ -481,7 +499,31 @@ void getHuffmanTree(file_char *all_char_freq, int size)
 	{
 		data[i] = all_char_freq[i].ch;
 		freq[i] = all_char_freq[i].freq;
+		all_codes[i].ch = all_char_freq[i].ch;
 	}
 
-	HuffmanCodes(data, freq, size);
+	HuffmanCodes(data, freq, size, all_codes);
+
+	return all_codes;
+}
+
+void getBitString(FILE *inFPtr, huff_code *all_codes, int size)
+{
+	// Reset the file pointer to the start of the file, to read through it again
+	fseek(inFPtr, 0, SEEK_SET);
+
+	void print_code(char ch)
+	{
+		for(int i = 0; i < size; i++)
+			if(all_codes[i].ch == ch)
+				printf("'%s'", all_codes[i].code);
+	}
+
+	// Iterating through all the characters in the file
+	while(!feof(inFPtr))
+	{
+		char ch;
+		fscanf(inFPtr, "%c", &ch);
+		print_code(ch);
+	}
 }
