@@ -42,14 +42,14 @@ int main(int argc, char **argv)
 	// Function prototypes
 	file_char *getCharFreq(FILE*, int*);
 	huff_code *getHuffmanTree(file_char*, int);
-	void getBitString(FILE*, huff_code*, int);
+	void compressFile(FILE*, FILE*, huff_code*, int);
 
 	printf("File: %s\n", argv[1]);
 
 	FILE *inFPtr = NULL, *outFPtr;
 
 	inFPtr = fopen(argv[1], "r");
-	// outFPtr = fopen("compressed.bin", "wb");
+	outFPtr = fopen("compressed.bin", "wb");
 
 	if(inFPtr == NULL)
 	{
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 	for(int i = 0; i < char_num; i++)
 		printf("'%c' = '%s'\n", all_codes[i].ch, all_codes[i].code);
 
-	getBitString(inFPtr, all_codes, char_num);
+	compressFile(inFPtr, outFPtr, all_codes, char_num);
 
 	fclose(inFPtr);
 
@@ -189,6 +189,7 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 			{
 				root = (char_freq*)malloc(sizeof(char_freq));
 				root -> freq = 1;
+				root -> ch = ch;
 				root -> next = NULL;
 			}
 			
@@ -507,23 +508,42 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size)
 	return all_codes;
 }
 
-void getBitString(FILE *inFPtr, huff_code *all_codes, int size)
+void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 {
 	// Reset the file pointer to the start of the file, to read through it again
 	fseek(inFPtr, 0, SEEK_SET);
 
-	void print_code(char ch)
+	char *getCode(char ch)
 	{
 		for(int i = 0; i < size; i++)
 			if(all_codes[i].ch == ch)
-				printf("'%s'", all_codes[i].code);
+				return all_codes[i].code;
 	}
+
+	int i_byte = 0;
+
+	// void writeToFile(char *code)
+	// {
+	// 	if((i + 1) % 8 == 0)
+	// 	{
+	// 		fwrite(&ch, sizeof(ch), 1, outFPtr);
+	// 		ch = 0;
+	// 	}
+
+	// 	else if(bin[i] == '1')
+	// 		ch += pow(2, (7 - (i % 8)));
+		
+	// 	i++
+	// }
 
 	// Iterating through all the characters in the file
 	while(!feof(inFPtr))
 	{
 		char ch;
 		fscanf(inFPtr, "%c", &ch);
-		print_code(ch);
+
+		// writeToFile()
+		char *code = getCode(ch);
+		printf("'%c': %s'\n", ch, code);
 	}
 }
