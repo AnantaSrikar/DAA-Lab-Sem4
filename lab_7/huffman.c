@@ -10,6 +10,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
+#include<math.h>
 
 // Structure to store character frequencies
 struct file_char
@@ -520,21 +521,84 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 				return all_codes[i].code;
 	}
 
-	int i_byte = 0;
+	void writeByteToFile(char *code)
+	{
+		unsigned char ch = 0;
 
-	// void writeToFile(char *code)
-	// {
-	// 	if((i + 1) % 8 == 0)
-	// 	{
-	// 		fwrite(&ch, sizeof(ch), 1, outFPtr);
-	// 		ch = 0;
-	// 	}
+		for(int i = 0; i < 8; i++)
+		{
+			if((i + 1) % 8 == 0)
+				fwrite(&ch, sizeof(ch), 1, outFPtr);
 
-	// 	else if(bin[i] == '1')
-	// 		ch += pow(2, (7 - (i % 8)));
+			else if(code[i] == '1')
+				ch += pow(2, (7 - (i % 8)));
+		}
+	}
+
+	int prev_length = 0;
+	char prev_code[8];
+
+	void writeToFile(char *code)
+	{
+		int code_length = strlen(code);
+
+		if(prev_length == 0 && code_length == 8)
+			writeByteToFile(code);
+
+		else if(prev_length == 0 && code_length < 8)
+		{
+			for(int i = 0; i < code_length; i++)
+				prev_code[i] = code[i];
+
+			prev_length = code_length;
+		}
 		
-	// 	i++
-	// }
+
+		// TODO: what if code_lenght > 16 ?
+		else if(prev_length == 0 && code_length > 8)
+		{
+			for(int i = 0; i < 8; i++)
+				prev_code[i] = code[i];
+			
+			writeByteToFile(prev_code);
+
+			for(int i = 8; i < code_length; i++)
+				prev_code[i - 8] = prev_code[i];
+
+			prev_length = code_length - 8;
+		}
+
+		else if(prev_length > 0 && prev_length + code_length == 8)
+		{
+			for(int i = prev_length + 1; i < 8; i++)
+				prev_code[i] = code[i];
+
+			writeByteToFile(prev_code);
+			
+			prev_length = 0;
+		}
+
+		else if(prev_length > 0 && prev_length + code_length < 8)
+		{
+			for(int i = prev_length + 1; i < prev_length + code_length; i++)
+				prev_code[i] = code[i];
+
+			prev_length += code_length;
+		}
+
+		else if(prev_length > 0 && prev_length + code_length > 8)
+		{
+			for(int i = prev_length + 1; i < 8; i++)
+				prev_code[i] = code[i];
+
+			writeByteToFile(prev_code);
+
+			for(int i = 8; i < prev_length + code_length; i++)
+				prev_code[i - 8] = code[i];
+
+			prev_length = (prev_length + code_length) - 8;
+		}
+	}
 
 	// Iterating through all the characters in the file
 	while(!feof(inFPtr))
@@ -542,8 +606,8 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 		char ch;
 		fscanf(inFPtr, "%c", &ch);
 
-		// writeToFile()
 		char *code = getCode(ch);
-		printf("'%c': %s'\n", ch, code);
+		writeToFile(code);
+		// printf("'%c': %s'\n", ch, code);
 	}
 }
