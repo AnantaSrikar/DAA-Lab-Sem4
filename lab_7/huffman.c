@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 	file_char *getCharFreq(FILE*, int*);
 	huff_code *getHuffmanTree(file_char*, int);
 	void compressFile(FILE*, FILE*, huff_code*, int);
+	void decompressFile(FILE*, huff_code*, int);
 
 	printf("File: %s\n", argv[1]);
 
@@ -71,6 +72,11 @@ int main(int argc, char **argv)
 	compressFile(inFPtr, outFPtr, all_codes, char_num);
 
 	fclose(inFPtr);
+	fclose(outFPtr);
+
+	FILE *comFPtr = fopen("compressed.bin", "rb");
+
+	decompressFile(comFPtr, all_codes, char_num);
 
 	return(0);
 }
@@ -526,13 +532,10 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 		unsigned char ch = 0;
 
 		for(int i = 0; i < 8; i++)
-		{
-			if((i + 1) % 8 == 0)
-				fwrite(&ch, sizeof(ch), 1, outFPtr);
-
-			else if(code[i] == '1')
+			if(code[i] == '1')
 				ch += pow(2, (7 - (i % 8)));
-		}
+
+		fwrite(&ch, sizeof(ch), 1, outFPtr);
 	}
 
 	int prev_length = 0;
@@ -542,61 +545,67 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	{
 		int code_length = strlen(code);
 
-		if(prev_length == 0 && code_length == 8)
-			writeByteToFile(code);
-
-		else if(prev_length == 0 && code_length < 8)
+		if(prev_length == 0)
 		{
-			for(int i = 0; i < code_length; i++)
-				prev_code[i] = code[i];
+			if(code_length == 8)
+				writeByteToFile(code);
 
-			prev_length = code_length;
-		}
-		
+			else if(code_length < 8)
+			{
+				for(int i = 0; i < code_length; i++)
+					prev_code[i] = code[i];
 
-		// TODO: what if code_lenght > 16 ?
-		else if(prev_length == 0 && code_length > 8)
-		{
-			for(int i = 0; i < 8; i++)
-				prev_code[i] = code[i];
+				prev_length = code_length;
+			}
 			
-			writeByteToFile(prev_code);
+			// TODO: what if code_length > 16 ?
+			else if(code_length > 8)
+			{
+				for(int i = 0; i < 8; i++)
+					prev_code[i] = code[i];
+				
+				writeByteToFile(prev_code);
 
-			for(int i = 8; i < code_length; i++)
-				prev_code[i - 8] = prev_code[i];
+				for(int i = 8; i < code_length; i++)
+					prev_code[i - 8] = prev_code[i];
 
-			prev_length = code_length - 8;
+				prev_length = code_length - 8;
+			}
 		}
 
-		else if(prev_length > 0 && prev_length + code_length == 8)
+		// prev_length > 0
+		else
 		{
-			for(int i = prev_length + 1; i < 8; i++)
-				prev_code[i] = code[i];
+			if(prev_length + code_length == 8)
+			{
+				for(int i = prev_length + 1; i < 8; i++)
+					prev_code[i] = code[i];
 
-			writeByteToFile(prev_code);
-			
-			prev_length = 0;
-		}
+				writeByteToFile(prev_code);
+				
+				prev_length = 0;
+			}
 
-		else if(prev_length > 0 && prev_length + code_length < 8)
-		{
-			for(int i = prev_length + 1; i < prev_length + code_length; i++)
-				prev_code[i] = code[i];
+			else if(prev_length + code_length < 8)
+			{
+				for(int i = prev_length; i < prev_length + code_length; i++)
+					prev_code[i] = code[i - prev_length];
 
-			prev_length += code_length;
-		}
+				prev_length += code_length;
+			}
 
-		else if(prev_length > 0 && prev_length + code_length > 8)
-		{
-			for(int i = prev_length + 1; i < 8; i++)
-				prev_code[i] = code[i];
+			else if(prev_length + code_length > 8)
+			{
+				for(int i = prev_length; i < 8; i++)
+					prev_code[i] = code[i - prev_length];
 
-			writeByteToFile(prev_code);
+				writeByteToFile(prev_code);
 
-			for(int i = 8; i < prev_length + code_length; i++)
-				prev_code[i - 8] = code[i];
+				for(int i = 8; i < prev_length + code_length; i++)
+					prev_code[i - 8] = code[i - prev_length];
 
-			prev_length = (prev_length + code_length) - 8;
+				prev_length = (prev_length + code_length) - 8;
+			}
 		}
 	}
 
@@ -608,6 +617,17 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 
 		char *code = getCode(ch);
 		writeToFile(code);
-		// printf("'%c': %s'\n", ch, code);
+		printf("'%c': %s'\n", ch, code);
+	}
+}
+
+void decompressFile(FILE *inFPtr, huff_code *all_codes, int size)
+{
+	unsigned char ch=0;
+	while(!feof(inFPtr))
+	{
+		fread(&ch, sizeof(ch), 1, inFPtr);
+		for(int i = 0; i < 8; i++)
+			printf("%d", (ch >> i) & 1);
 	}
 }
