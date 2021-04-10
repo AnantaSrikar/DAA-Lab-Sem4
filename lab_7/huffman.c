@@ -19,6 +19,19 @@ struct file_char
 	int freq;
 };
 
+// A Huffman tree node
+struct MinHeapNode
+{
+	// One of the input characters
+	char data;
+
+	// Frequency of the character
+	unsigned freq;
+
+	// Left and right child of this node
+	struct MinHeapNode *left, *right;
+};
+
 struct huff_code
 {
 	char ch;
@@ -26,6 +39,7 @@ struct huff_code
 };
 
 typedef struct file_char file_char;
+typedef struct MinHeapNode MinHeapNode;
 typedef struct huff_code huff_code;
 
 int main(int argc, char **argv)
@@ -42,9 +56,9 @@ int main(int argc, char **argv)
 
 	// Function prototypes
 	file_char *getCharFreq(FILE*, int*);
-	huff_code *getHuffmanTree(file_char*, int);
+	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
 	void compressFile(FILE*, FILE*, huff_code*, int);
-	void decompressFile(FILE*, huff_code*, int);
+	void decompressFile(FILE*, huff_code*, int, MinHeapNode*);
 
 	printf("File: %s\n", argv[1]);
 
@@ -64,7 +78,9 @@ int main(int argc, char **argv)
 
 	printf("\n\nchar_num = %d\n\n", char_num);
 
-	huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num);
+	MinHeapNode *root;
+
+	huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num, &root);
 
 	for(int i = 0; i < char_num; i++)
 		printf("'%c' = '%s'\n", all_codes[i].ch, all_codes[i].code);
@@ -76,7 +92,7 @@ int main(int argc, char **argv)
 
 	FILE *comFPtr = fopen("compressed.bin", "rb");
 
-	decompressFile(comFPtr, all_codes, char_num);
+	decompressFile(comFPtr, all_codes, char_num, root);
 
 	return(0);
 }
@@ -234,21 +250,8 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 }
 
 
-huff_code *getHuffmanTree(file_char *all_char_freq, int size)
+huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root)
 {
-	// A Huffman tree node
-	struct MinHeapNode
-	{
-		// One of the input characters
-		char data;
-
-		// Frequency of the character
-		unsigned freq;
-
-		// Left and right child of this node
-		struct MinHeapNode *left, *right;
-	};
-
 	// A Min Heap: Collection of
 	// min-heap (or Huffman tree) nodes
 	struct MinHeap
@@ -489,13 +492,13 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size)
 	{
 		// TODO: build data array and freq array for conversion
 		// Construct Huffman Tree
-		struct MinHeapNode* root = buildHuffmanTree(data, freq, size);
+		*root = buildHuffmanTree(data, freq, size);
 
 		// Print Huffman codes using
 		// the Huffman tree built above
 		int arr[100], top = 0;
 
-		printCodes(root, arr, top, all_codes, size);
+		printCodes(*root, arr, top, all_codes, size);
 	}
 
 	huff_code *all_codes = (huff_code*)malloc(size * sizeof(huff_code));
@@ -621,13 +624,43 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	}
 }
 
-void decompressFile(FILE *inFPtr, huff_code *all_codes, int size)
+void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *root)
 {
-	unsigned char ch=0;
+	unsigned char ch = 0;
+
+	int isLeaf(struct MinHeapNode* root)
+	{
+		return !(root -> left) && !(root -> right);
+	}
+
+	void printCodes(struct MinHeapNode* root, char code[], int i)
+	{
+		if (isLeaf(root))
+			printf("%c\n", root -> data);
+
+		// Assign 0 to left edge and recur
+		if (root -> left && code[i] == '0')
+			printCodes(root -> left, code, i + 1);
+
+		// Assign 1 to right edge and recur
+		if (root -> right && code[i] == '1')
+			printCodes(root -> right, code, i + 1);
+	}
+
+	char prev_code[8];
+
 	while(!feof(inFPtr))
 	{
 		fread(&ch, sizeof(ch), 1, inFPtr);
-		for(int i = 0; i < 8; i++)
-			printf("%d", (ch >> i) & 1);
+
+		// prev_code = (char*)malloc(8 * sizeof(char));
+
+		for(int i = 7; i >= 0; i--)
+			prev_code[7 - i] = ((ch >> i) & 1) + '0';
+
+		// getCharFromCode(prev_code);
+		// inOrder(root);
+		printCodes(root, prev_code, 0);
+
 	}
 }
