@@ -1,9 +1,7 @@
 /*
 	Author: Ananta Srikar
 
-	TODO: - Fix missing first character
-			write encoded bit string to file
-			implement decoding
+	TODO: - implement decoding
 */
 
 #include<stdio.h>
@@ -620,7 +618,7 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 
 		char *code = getCode(ch);
 		writeToFile(code);
-		printf("'%c': %s'\n", ch, code);
+		// printf("'%c': %s'\n", ch, code);
 	}
 }
 
@@ -633,34 +631,37 @@ void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *r
 		return !(root -> left) && !(root -> right);
 	}
 
-	void printCodes(struct MinHeapNode* root, char code[], int i)
+	char printCodes(struct MinHeapNode* root, char code[], int i, int *end_index)
 	{
 		if (isLeaf(root))
-			printf("%c\n", root -> data);
+		{
+			*end_index = i;
+			return root -> data;
+		}
 
 		// Assign 0 to left edge and recur
 		if (root -> left && code[i] == '0')
-			printCodes(root -> left, code, i + 1);
+			return printCodes(root -> left, code, i + 1, end_index);
 
 		// Assign 1 to right edge and recur
 		if (root -> right && code[i] == '1')
-			printCodes(root -> right, code, i + 1);
+			return printCodes(root -> right, code, i + 1, end_index);
 	}
 
-	char prev_code[8];
+	char cur_code[8], prev_code[8], big_str[16];
+	int end_index = 0;
 
 	while(!feof(inFPtr))
 	{
 		fread(&ch, sizeof(ch), 1, inFPtr);
 
-		// prev_code = (char*)malloc(8 * sizeof(char));
-
 		for(int i = 7; i >= 0; i--)
-			prev_code[7 - i] = ((ch >> i) & 1) + '0';
+			cur_code[7 - i] = ((ch >> i) & 1) + '0';
 
 		// getCharFromCode(prev_code);
 		// inOrder(root);
-		printCodes(root, prev_code, 0);
+		char op_char = printCodes(root, cur_code, 0, &end_index);
 
+		// printf("'%c' : '%d'\n", op_char, end_index);
 	}
 }
