@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
  
 struct Edge
@@ -101,28 +102,39 @@ void BellmanFord(struct Graph* graph, int source)
 	return;
 }
  
-int main()
+int main(int argc, char **argv)
 {
 	int V,E,S;  //V = no.of Vertices, E = no.of Edges, S is source vertex
+
+	V = atoi(argv[1]);
+	E = atoi(argv[2]);
+	S = atoi(argv[3]);
  
-	printf("Enter number of vertices in graph\n");
-	scanf("%d",&V);
+	// printf("Enter number of vertices in graph\n");
+	// scanf("%d",&V);
  
-	printf("Enter number of edges in graph\n");
-	scanf("%d",&E);
+	// printf("Enter number of edges in graph\n");
+	// scanf("%d",&E);
  
-	printf("Enter your source vertex number\n");
-	scanf("%d",&S);
+	// printf("Enter your source vertex number\n");
+	// scanf("%d",&S);
  
 	struct Graph* graph = createGraph(V, E);    //calling the function to allocate space to these many vertices and edges
- 
-	int i;
-	for(i=0;i<E;i++){
-		printf("\nEnter edge %d properties Source, destination, weight respectively\n",i+1);
-		scanf("%d",&graph->edge[i].source);
-		scanf("%d",&graph->edge[i].destination);
-		scanf("%d",&graph->edge[i].weight);
+
+	for(int i = 0; i < E; i += 3)
+	{
+		graph->edge[i].source = atoi(argv[i + 4]);
+		graph->edge[i].destination = atoi(argv[i + 5]);
+		graph->edge[i].weight = atoi(argv[i + 6]);
 	}
+ 
+	// int i;
+	// for(i=0;i<E;i++){
+	// 	printf("\nEnter edge %d properties Source, destination, weight respectively\n",i+1);
+	// 	scanf("%d",&graph->edge[i].source);
+	// 	scanf("%d",&graph->edge[i].destination);
+	// 	scanf("%d",&graph->edge[i].weight);
+	// }
  
 	BellmanFord(graph, S);
 	//passing created graph and source vertex to BellmanFord Algorithm function
