@@ -521,6 +521,14 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	// Reset the file pointer to the start of the file, to read through it again
 	fseek(inFPtr, 0, SEEK_SET);
 
+	int max_code_length = strlen(all_codes[0].code);
+
+	void resetPrevCode(char prev_code[])
+	{
+		for(int i = 0; i < max_code_length; i++)
+			prev_code[i] = '0';
+	}
+
 	char *getCode(char ch)
 	{
 		for(int i = 0; i < size; i++)
@@ -540,7 +548,7 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	}
 
 	int prev_length = 0;
-	char prev_code[8];
+	char prev_code[max_code_length], write_code[8];
 
 	void writeToFile(char *code)
 	{
@@ -554,23 +562,32 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			else if(code_length < 8)
 			{
 				for(int i = 0; i < code_length; i++)
-					prev_code[i] = code[i];
+					write_code[i] = code[i];
 
 				prev_length = code_length;
 			}
 			
-			// TODO: what if code_length > 16 ?
+			// if code_length > 16 ?
 			else if(code_length > 8)
 			{
-				for(int i = 0; i < 8; i++)
-					prev_code[i] = code[i];
-				
-				writeByteToFile(prev_code);
+				for(int i = 0; i < ceil(code_length / 8); i++)
+				{
+					if(i != ceil(code_length / 8) - 1)
+					{
+						for(int j = 0; j < 8; j++)
+							write_code[j] = code[(i * 8) + j];
+						
+						writeByteToFile(write_code);
+					}
 
-				for(int i = 8; i < code_length; i++)
-					prev_code[i - 8] = prev_code[i];
+					else
+					{
+						prev_length = code_length % 8;
 
-				prev_length = code_length - 8;
+						for(int i = 0; i < prev_length; i++)
+							write_code[i] = code[(code_length / 8) * 8 + i];
+					}
+				}
 			}
 		}
 
@@ -580,9 +597,9 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			if(prev_length + code_length == 8)
 			{
 				for(int i = prev_length + 1; i < 8; i++)
-					prev_code[i] = code[i];
+					write_code[i] = code[i];
 
-				writeByteToFile(prev_code);
+				writeByteToFile(write_code);
 				
 				prev_length = 0;
 			}
@@ -590,7 +607,7 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			else if(prev_length + code_length < 8)
 			{
 				for(int i = prev_length; i < prev_length + code_length; i++)
-					prev_code[i] = code[i - prev_length];
+					write_code[i] = code[i - prev_length];
 
 				prev_length += code_length;
 			}
@@ -598,14 +615,58 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			else if(prev_length + code_length > 8)
 			{
 				for(int i = prev_length; i < 8; i++)
-					prev_code[i] = code[i - prev_length];
-
-				writeByteToFile(prev_code);
+					write_code[i] = code[i - prev_length];
+				
+				writeByteToFile(write_code);
 
 				for(int i = 8; i < prev_length + code_length; i++)
-					prev_code[i - 8] = code[i - prev_length];
+				{
+						write_code[i - 8] = code[i - prev_length];
+				}
 
-				prev_length = (prev_length + code_length) - 8;
+				// Check if we need to iterate or not
+				if((prev_length + code_length) / 8 > 1)
+				{
+					for(int i = 1; i < ceil((prev_length + code_length) / 8); i++)
+					{
+						if(i != ceil((prev_length + code_length) / 8) - 1)
+						{
+							for(int j = 0; j < 8; j++)
+								write_code[j] = code[(i * 8) + j];
+							
+							writeByteToFile(write_code);
+						}
+
+						else
+						{
+							prev_length = (prev_length + code_length) % 8;
+
+							for(int i = 0; i < prev_length; i++)
+								write_code[i] = code[((prev_length + code_length) / 8) * 8 + i];
+						}
+					}
+				}
+
+				else
+					prev_length = (prev_length + code_length) - 8;
+
+
+				// 	if(i != ceil((code_length + prev_length) / 8) - 1)
+				// 	{
+				// 		for(int j = 0; j < 8; j++)
+				// 			write_code[j] = code[(i * 8) + j];
+						
+				// 		writeByteToFile(write_code);
+				// 	}
+
+				// 	else
+				// 	{
+				// 		prev_length = code_length % 8;
+
+				// 		for(int i = 0; i < prev_length; i++)
+				// 			write_code[i] = code[(code_length / 8) * 8 + i];
+				// 	}
+				// }
 			}
 		}
 	}
