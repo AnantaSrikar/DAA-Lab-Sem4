@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 	// End of command line arguments
 
 	// Function prototypes
+	int isTxtFile(char[]);
 	file_char *getCharFreq(FILE*, int*);
 	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
 	void compressFile(FILE*, FILE*, huff_code*, int);
@@ -63,7 +64,14 @@ int main(int argc, char **argv)
 	FILE *inFPtr = NULL, *outFPtr;
 
 	inFPtr = fopen(argv[1], "r");
-	outFPtr = fopen("compressed.bin", "wb");
+	outFPtr = fopen("compressed.cmp", "wb");
+
+	// Check if the file is a txt file
+	if(!isTxtFile(argv[1]))
+	{
+		printf("Given file is NOT a text file! Please check and try again.");
+		return -1;
+	}
 
 	if(inFPtr == NULL)
 	{
@@ -93,6 +101,19 @@ int main(int argc, char **argv)
 	decompressFile(comFPtr, all_codes, char_num, root);
 
 	return(0);
+}
+
+// Function to check if the given file is a text file
+int isTxtFile(char file_name[])
+{
+	char ext[] = ".txt";
+	int file_name_length = strlen(file_name);
+
+	for(int i = file_name_length - 4; i < file_name_length; i++)
+		if(file_name[i] != ext[i - (file_name_length - 4)])
+			return 0;
+
+	return 1;
 }
 
 file_char *getCharFreq(FILE *inFPtr, int *char_num)
