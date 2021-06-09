@@ -96,9 +96,9 @@ int main(int argc, char **argv)
 	fclose(inFPtr);
 	fclose(outFPtr);
 
-	FILE *comFPtr = fopen("compressed.bin", "rb");
+	// FILE *comFPtr = fopen("compressed.bin", "rb");
 
-	decompressFile(comFPtr, all_codes, char_num, root);
+	// decompressFile(comFPtr, all_codes, char_num, root);
 
 	return(0);
 }
@@ -561,6 +561,8 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	{
 		unsigned char ch = 0;
 
+		printf("Writing '%s'\n", code);
+
 		for(int i = 0; i < 8; i++)
 			if(code[i] == '1')
 				ch += pow(2, (7 - (i % 8)));
@@ -574,6 +576,8 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	void writeToFile(char *code)
 	{
 		int code_length = strlen(code);
+
+		printf("prev_length = %d and code_length = %d\n", prev_length, code_length);
 
 		if(prev_length == 0)
 		{
@@ -591,9 +595,10 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			// if code_length > 16 ?
 			else if(code_length > 8)
 			{
-				for(int i = 0; i < ceil(code_length / 8); i++)
+				for(int i = 0; i < ceil(code_length / 8.0); i++)
 				{
-					if(i != ceil(code_length / 8) - 1)
+					printf("i = %d\n", i);
+					if(i != ceil(code_length / 8.0) - 1)
 					{
 						for(int j = 0; j < 8; j++)
 							write_code[j] = code[(i * 8) + j];
@@ -605,8 +610,8 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 					{
 						prev_length = code_length % 8;
 
-						for(int i = 0; i < prev_length; i++)
-							write_code[i] = code[(code_length / 8) * 8 + i];
+						for(int j = 0; j < prev_length; j++)
+							write_code[j] = code[(code_length / 8) * 8 + j];
 					}
 				}
 			}
@@ -646,11 +651,11 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 				}
 
 				// Check if we need to iterate or not
-				if((prev_length + code_length) / 8 > 1)
+				if((prev_length + code_length) / 8.0 > 1)
 				{
-					for(int i = 1; i < ceil((prev_length + code_length) / 8); i++)
+					for(int i = 1; i < ceil((prev_length + code_length) / 8.0); i++)
 					{
-						if(i != ceil((prev_length + code_length) / 8) - 1)
+						if(i != ceil((prev_length + code_length) / 8.0) - 1)
 						{
 							for(int j = 0; j < 8; j++)
 								write_code[j] = code[(i * 8) + j];
@@ -700,10 +705,11 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 
 		char *code = getCode(ch);
 		writeToFile(code);
-		// printf("'%c': %s'\n", ch, code);
+		printf("'%c': '%s'\n", ch, code);
 	}
 }
 
+// TODO: Finish decompression algorithm
 void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *root)
 {
 	unsigned char ch = 0;
