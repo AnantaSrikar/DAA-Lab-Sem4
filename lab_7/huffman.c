@@ -2,6 +2,7 @@
 	Author: Ananta Srikar
 
 	TODO: - implement decoding
+		  - FIX FILE NAME OOF
 */
 
 #include<stdio.h>
@@ -56,15 +57,16 @@ int main(int argc, char **argv)
 	int isTxtFile(char[]);
 	file_char *getCharFreq(FILE*, int*);
 	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
-	void compressFile(FILE*, FILE*, huff_code*, int);
-	void decompressFile(FILE*, huff_code*, int, MinHeapNode*);
+	void compressFile(FILE*, FILE*, FILE*, huff_code*, int);
+	void decompressFile(FILE*, FILE*, huff_code*, MinHeapNode*);
 
 	printf("File: %s\n", argv[1]);
 
-	FILE *inFPtr = NULL, *outFPtr;
+	FILE *inFPtr = NULL, *outCmpFPtr, *outDatFPtr;
 
 	inFPtr = fopen(argv[1], "r");
-	outFPtr = fopen("compressed.cmp", "wb");
+	outCmpFPtr = fopen("compressed.cmp", "wb");
+	outDatFPtr = fopen("compressed.dat", "w");
 
 	// Check if the file is a txt file
 	if(!isTxtFile(argv[1]))
@@ -91,14 +93,27 @@ int main(int argc, char **argv)
 	for(int i = 0; i < char_num; i++)
 		printf("'%c' = '%s'\n", all_codes[i].ch, all_codes[i].code);
 
-	compressFile(inFPtr, outFPtr, all_codes, char_num);
+	compressFile(inFPtr, outCmpFPtr, outDatFPtr, all_codes, char_num);
 
 	fclose(inFPtr);
-	fclose(outFPtr);
+	fclose(outCmpFPtr);
+	fclose(outDatFPtr);
 
-	// FILE *comFPtr = fopen("compressed.bin", "rb");
+	FILE *comFPtr = NULL, *datFPtr = NULL;
 
-	// decompressFile(comFPtr, all_codes, char_num, root);
+	comFPtr = fopen("compressed.cmp", "rb");
+	datFPtr = fopen("compressed.dat", "r");
+
+	if(comFPtr == NULL || datFPtr == NULL)
+	{
+		printf("Unable to open compressed file :(\n");
+		return -1;
+	}
+
+	decompressFile(comFPtr, datFPtr, all_codes, root);
+
+	fclose(comFPtr);
+	fclose(datFPtr);
 
 	return(0);
 }
@@ -537,12 +552,14 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root
 	return all_codes;
 }
 
-void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
+void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *all_codes, int size)
 {
 	// Reset the file pointer to the start of the file, to read through it again
 	fseek(inFPtr, 0, SEEK_SET);
 
 	int max_code_length = strlen(all_codes[0].code);
+
+	fprintf(outDatFPtr, "%d\n%d", max_code_length, size);
 
 	void resetPrevCode(char prev_code[])
 	{
@@ -561,13 +578,13 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	{
 		unsigned char ch = 0;
 
-		printf("Writing '%s'\n", code);
+		// printf("Writing '%s'\n", code);
 
 		for(int i = 0; i < 8; i++)
 			if(code[i] == '1')
 				ch += pow(2, (7 - (i % 8)));
 
-		fwrite(&ch, sizeof(ch), 1, outFPtr);
+		fwrite(&ch, sizeof(ch), 1, outCmpFPtr);
 	}
 
 	int prev_length = 0;
@@ -577,7 +594,7 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 	{
 		int code_length = strlen(code);
 
-		printf("prev_length = %d and code_length = %d\n", prev_length, code_length);
+		// printf("prev_length = %d and code_length = %d\n", prev_length, code_length);
 
 		if(prev_length == 0)
 		{
@@ -597,7 +614,7 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 			{
 				for(int i = 0; i < ceil(code_length / 8.0); i++)
 				{
-					printf("i = %d\n", i);
+					// printf("i = %d\n", i);
 					if(i != ceil(code_length / 8.0) - 1)
 					{
 						for(int j = 0; j < 8; j++)
@@ -675,24 +692,6 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 
 				else
 					prev_length = (prev_length + code_length) - 8;
-
-
-				// 	if(i != ceil((code_length + prev_length) / 8) - 1)
-				// 	{
-				// 		for(int j = 0; j < 8; j++)
-				// 			write_code[j] = code[(i * 8) + j];
-						
-				// 		writeByteToFile(write_code);
-				// 	}
-
-				// 	else
-				// 	{
-				// 		prev_length = code_length % 8;
-
-				// 		for(int i = 0; i < prev_length; i++)
-				// 			write_code[i] = code[(code_length / 8) * 8 + i];
-				// 	}
-				// }
 			}
 		}
 	}
@@ -705,14 +704,18 @@ void compressFile(FILE *inFPtr, FILE *outFPtr, huff_code *all_codes, int size)
 
 		char *code = getCode(ch);
 		writeToFile(code);
-		printf("'%c': '%s'\n", ch, code);
+		// printf("'%c': '%s'\n", ch, code);
 	}
 }
 
 // TODO: Finish decompression algorithm
-void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *root)
+void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinHeapNode *root)
 {
 	unsigned char ch = 0;
+
+	int max_code_length, size;
+
+	fscanf(inDatFPtr, "%d\n%d", &max_code_length, &size);
 
 	int isLeaf(struct MinHeapNode* root)
 	{
@@ -739,9 +742,9 @@ void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *r
 	char cur_code[8], prev_code[8], big_str[16];
 	int end_index = 0;
 
-	while(!feof(inFPtr))
+	while(!feof(inCmpFPtr))
 	{
-		fread(&ch, sizeof(ch), 1, inFPtr);
+		fread(&ch, sizeof(ch), 1, inCmpFPtr);
 
 		for(int i = 7; i >= 0; i--)
 			cur_code[7 - i] = ((ch >> i) & 1) + '0';
@@ -750,6 +753,6 @@ void decompressFile(FILE *inFPtr, huff_code *all_codes, int size, MinHeapNode *r
 		// inOrder(root);
 		char op_char = printCodes(root, cur_code, 0, &end_index);
 
-		// printf("'%c' : '%d'\n", op_char, end_index);
+		printf("'%c' : '%d'\n", op_char, end_index);
 	}
 }
