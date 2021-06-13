@@ -2,7 +2,6 @@
 	Author: Ananta Srikar
 
 	TODO: - implement decoding
-		  - FIX FILE NAME OOF
 */
 
 #include<stdio.h>
@@ -55,18 +54,31 @@ int main(int argc, char **argv)
 
 	// Function prototypes
 	int isTxtFile(char[]);
+	char *getRootName(char[]);
+
 	file_char *getCharFreq(FILE*, int*);
 	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
+
 	void compressFile(FILE*, FILE*, FILE*, huff_code*, int);
 	void decompressFile(FILE*, FILE*, huff_code*, MinHeapNode*);
 
-	printf("File: %s\n", argv[1]);
+	// printf("File: %s\n", argv[1]);
+	char cmp_name[strlen(argv[1])], dat_name[strlen(argv[1])];
+
+	strcpy(cmp_name, getRootName(argv[1]));
+	strcpy(dat_name, getRootName(argv[1]));
+	strcat(cmp_name, ".cmp");
+	strcat(dat_name, ".dat");
+
+	// printf("Root name: %s\n", getRootName(argv[1]));
+	printf("Cmp: %s\n", cmp_name);
+	printf("Dat: %s\n", dat_name);
 
 	FILE *inFPtr = NULL, *outCmpFPtr, *outDatFPtr;
 
 	inFPtr = fopen(argv[1], "r");
-	outCmpFPtr = fopen("compressed.cmp", "wb");
-	outDatFPtr = fopen("compressed.dat", "w");
+	outCmpFPtr = fopen(cmp_name, "wb");
+	outDatFPtr = fopen(dat_name, "w");
 
 	// Check if the file is a txt file
 	if(!isTxtFile(argv[1]))
@@ -101,8 +113,8 @@ int main(int argc, char **argv)
 
 	FILE *comFPtr = NULL, *datFPtr = NULL;
 
-	comFPtr = fopen("compressed.cmp", "rb");
-	datFPtr = fopen("compressed.dat", "r");
+	comFPtr = fopen(cmp_name, "rb");
+	datFPtr = fopen(dat_name, "r");
 
 	if(comFPtr == NULL || datFPtr == NULL)
 	{
@@ -129,6 +141,16 @@ int isTxtFile(char file_name[])
 			return 0;
 
 	return 1;
+}
+
+char *getRootName(char file_name[])
+{
+	char *root_name = (char*)malloc((strlen(file_name)) * sizeof(char));
+	
+	for(int i = 0; i < strlen(file_name) - 4; i++)
+		root_name[i] = file_name[i];
+
+	return root_name;
 }
 
 file_char *getCharFreq(FILE *inFPtr, int *char_num)
