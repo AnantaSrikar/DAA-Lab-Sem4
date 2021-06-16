@@ -739,6 +739,38 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 
 	fscanf(inDatFPtr, "%d\n%d", &max_code_length, &size);
 
+	printf("max_code_length = %d\nsize = %d\n", max_code_length, size);
+
+	/*
+		Implementing manual string checking instead of using strcmp because
+		we only need to check first n chars
+	*/
+	int isEqual(char code_1[], char code_2[], int length)
+	{
+		for(int i = 0; i < length; i++)
+			if(code_1[i] != code_2[i])
+				return 0;
+		
+		// If both the strings are equal
+		return 1;
+	}
+
+	int getIndexOfCode(char code[], int length)
+	{
+		for(int i = 0; i < size; i++)
+		{
+			if(strlen(all_codes[i].code) != length)
+				continue;
+			
+			else if(isEqual(all_codes[i].code, code, length))
+				return i; // This will break the loop as well so dw :)
+		}
+
+		// No decoded character found
+		return -1;
+	}
+
+
 	int isLeaf(struct MinHeapNode* root)
 	{
 		return !(root -> left) && !(root -> right);
@@ -761,8 +793,8 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 			return printCodes(root -> right, code, i + 1, end_index);
 	}
 
-	char cur_code[8], prev_code[8], big_str[16];
-	int end_index = 0;
+	char cur_code[8], prev_code[8], big_str[16], decode[max_code_length];
+	int end_index = 0, prev_length = 0;
 
 	while(!feof(inCmpFPtr))
 	{
@@ -771,10 +803,36 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 		for(int i = 7; i >= 0; i--)
 			cur_code[7 - i] = ((ch >> i) & 1) + '0';
 
+		if(prev_length == 0)
+		{
+			for(int i = 0; i < 8; i++)
+			{
+				decode[i] = cur_code[i];
+				
+				// int index = -1;
+				int index = getIndexOfCode(decode, i);
+
+				if(index == -1)
+					continue;
+
+				else
+				{
+					printf("Got index = %d\n", index);
+					// printf("Got char: %s\n", all_codes[index].ch);
+					prev_length = i;
+				}
+			}
+		}
+
+		else
+		{
+			// DO more things here :)
+		}
+
 		// getCharFromCode(prev_code);
 		// inOrder(root);
-		char op_char = printCodes(root, cur_code, 0, &end_index);
+		// char op_char = printCodes(root, cur_code, 0, &end_index);
 
-		printf("'%c' : '%d'\n", op_char, end_index);
+		// printf("'%c' : '%d'\n", op_char, end_index);
 	}
 }
