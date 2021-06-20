@@ -1,7 +1,8 @@
 /*
 	Author: Ananta Srikar
 
-	TODO: - implement decoding
+	TODO:	- implement decoding
+			- fix encoding bug
 */
 
 #include<stdio.h>
@@ -122,7 +123,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	decompressFile(comFPtr, datFPtr, all_codes, root);
+	// decompressFile(comFPtr, datFPtr, all_codes, root);
 
 	fclose(comFPtr);
 	fclose(datFPtr);
@@ -546,7 +547,6 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root
 	// the built Huffman Tree
 	void HuffmanCodes(char data[], int freq[], int size, huff_code all_codes[])
 	{
-		// TODO: build data array and freq array for conversion
 		// Construct Huffman Tree
 		*root = buildHuffmanTree(data, freq, size);
 
@@ -596,11 +596,11 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 				return all_codes[i].code;
 	}
 
-	void writeByteToFile(char *code)
+	void writeByteToFile(char code[])
 	{
 		unsigned char ch = 0;
 
-		// printf("Writing '%s'\n", code);
+		printf("Writing code : %s\n", code);
 
 		for(int i = 0; i < 8; i++)
 			if(code[i] == '1')
@@ -610,7 +610,7 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 	}
 
 	int prev_length = 0;
-	char prev_code[max_code_length], write_code[8];
+	char write_code[8] = "00000000";
 
 	void writeToFile(char *code)
 	{
@@ -634,24 +634,15 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 			// if code_length > 16 ?
 			else if(code_length > 8)
 			{
-				for(int i = 0; i < ceil(code_length / 8.0); i++)
+
+				for(int i = 0; i < code_length; i++)
 				{
-					// printf("i = %d\n", i);
-					if(i != ceil(code_length / 8.0) - 1)
-					{
-						for(int j = 0; j < 8; j++)
-							write_code[j] = code[(i * 8) + j];
-						
+					write_code[i % 8] = code[i];
+
+					if((i + 1) % 8 == 0)
 						writeByteToFile(write_code);
-					}
 
-					else
-					{
-						prev_length = code_length % 8;
-
-						for(int j = 0; j < prev_length; j++)
-							write_code[j] = code[(code_length / 8) * 8 + j];
-					}
+					prev_length = code_length % 8;
 				}
 			}
 		}
@@ -679,41 +670,15 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 
 			else if(prev_length + code_length > 8)
 			{
-				for(int i = prev_length; i < 8; i++)
-					write_code[i] = code[i - prev_length];
-				
-				writeByteToFile(write_code);
-
-				for(int i = 8; i < prev_length + code_length; i++)
+				for(int i = prev_length; i < prev_length + code_length; i++)
 				{
-						write_code[i - 8] = code[i - prev_length];
+					write_code[i % 8] = code[i - prev_length];
+
+					if((i + 1) % 8 == 0)
+						writeByteToFile(write_code);
 				}
 
-				// Check if we need to iterate or not
-				if((prev_length + code_length) / 8.0 > 1)
-				{
-					for(int i = 1; i < ceil((prev_length + code_length) / 8.0); i++)
-					{
-						if(i != ceil((prev_length + code_length) / 8.0) - 1)
-						{
-							for(int j = 0; j < 8; j++)
-								write_code[j] = code[(i * 8) + j];
-							
-							writeByteToFile(write_code);
-						}
-
-						else
-						{
-							prev_length = (prev_length + code_length) % 8;
-
-							for(int i = 0; i < prev_length; i++)
-								write_code[i] = code[((prev_length + code_length) / 8) * 8 + i];
-						}
-					}
-				}
-
-				else
-					prev_length = (prev_length + code_length) - 8;
+				prev_length = (prev_length + code_length) % 8;
 			}
 		}
 	}
@@ -770,6 +735,21 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 		return -1;
 	}
 
+	void setDecode0(char decode[])
+	{
+		for(int i = 0; i < max_code_length; i++)
+			decode[i] = '0';
+	}
+
+	// Function to get the next largest multiple of 8
+	int nextMulti8(int num)
+	{
+		if((num / 8) * 8 > num)
+			return (num / 8) * 8;
+
+		return ((num / 8) + 1) * 8;
+	}
+
 
 	int isLeaf(struct MinHeapNode* root)
 	{
@@ -794,7 +774,9 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 	}
 
 	char cur_code[8], prev_code[8], big_str[16], decode[max_code_length];
-	int end_index = 0, prev_length = 0;
+	int end_index = 0, prev_length = 0, isCodeFound = 0;
+
+	setDecode0(decode);
 
 	while(!feof(inCmpFPtr))
 	{
@@ -802,31 +784,97 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 
 		for(int i = 7; i >= 0; i--)
 			cur_code[7 - i] = ((ch >> i) & 1) + '0';
-
+		
 		if(prev_length == 0)
 		{
-			for(int i = 0; i < 8; i++)
+			if(!isCodeFound)
 			{
-				decode[i] = cur_code[i];
-				
-				// int index = -1;
-				int index = getIndexOfCode(decode, i);
-
-				if(index == -1)
-					continue;
-
-				else
+				for(int i = 0; i < 8; i++)
 				{
-					printf("Got index = %d\n", index);
-					// printf("Got char: %s\n", all_codes[index].ch);
-					prev_length = i;
+					decode[i] = cur_code[i];
+
+					// int index = -1;
+					int index = getIndexOfCode(decode, i);
+
+					printf("prev_length = 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
+
+					if(index == -1)
+					{
+						if(i == 7)
+							prev_length += 8;
+						continue;
+					}
+
+					else
+					{
+						printf("Got index = %d\n", index);
+						setDecode0(decode);
+						// printf("Got char: %s\n", all_codes[index].ch);
+						prev_length = i;
+
+						isCodeFound = 1;
+					}
 				}
 			}
+
+			else
+				printf("Something seriously bad happened, you shouldn't be here!!!\n");
 		}
 
 		else
 		{
-			// DO more things here :)
+			for(int i = prev_length; i < nextMulti8(prev_length); i++)
+			{
+				if(!isCodeFound)
+				{
+					decode[i] = cur_code[i - (prev_length)];
+
+					int index = getIndexOfCode(decode, i);
+
+					printf("prev_length > 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
+
+					if(index == -1)
+					{
+						if(i == nextMulti8(prev_length) - 1)
+							prev_length += i - (prev_length);
+						continue;
+					}
+
+					else
+					{
+						printf("Got index = %d\n", index);
+						setDecode0(decode);
+						// printf("Got char: %s\n", all_codes[index].ch);
+						prev_length = i - (prev_length + 1);
+						
+						isCodeFound = 1;
+					}
+				}
+
+				else
+				{
+					isCodeFound = 0;
+					decode[i - (prev_length + 1)] = cur_code[i];
+
+					int index = getIndexOfCode(decode, i - (prev_length + 1));
+
+					if(index == -1)
+					{
+						if(i == nextMulti8(prev_length + 1) - 1)
+							prev_length += i - (prev_length + 1);
+						continue;
+					}
+
+					else
+					{
+						printf("Got index = %d\n", index);
+						// printf("Got char: %s\n", all_codes[index].ch);
+						prev_length = i - (prev_length + 1);
+						
+						isCodeFound = 1;
+					}
+				}
+			}
 		}
 
 		// getCharFromCode(prev_code);
