@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	// decompressFile(comFPtr, datFPtr, all_codes, root);
+	decompressFile(comFPtr, datFPtr, all_codes, root);
 
 	fclose(comFPtr);
 	fclose(datFPtr);
@@ -600,7 +600,7 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 	{
 		unsigned char ch = 0;
 
-		printf("Writing code : %s\n", code);
+		// printf("Writing code : %s\n", code);
 
 		for(int i = 0; i < 8; i++)
 			if(code[i] == '1')
@@ -652,8 +652,10 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 		{
 			if(prev_length + code_length == 8)
 			{
-				for(int i = prev_length + 1; i < 8; i++)
-					write_code[i] = code[i];
+				for(int i = prev_length; i < 8; i++)
+					write_code[i] = code[i - prev_length];
+
+				// printf("prev_length = %d, code_length = %d, writing code: %s\n", prev_length, code_length, write_code);
 
 				writeByteToFile(write_code);
 				
@@ -773,7 +775,8 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 			return printCodes(root -> right, code, i + 1, end_index);
 	}
 
-	char cur_code[8], prev_code[8], big_str[16], decode[max_code_length];
+	char cur_code[8], decode[max_code_length];
+	int cur_index = 0, d_index = 0;
 	int end_index = 0, prev_length = 0, isCodeFound = 0;
 
 	setDecode0(decode);
@@ -782,100 +785,127 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 	{
 		fread(&ch, sizeof(ch), 1, inCmpFPtr);
 
+		// Getting the stream of bits for decoding
 		for(int i = 7; i >= 0; i--)
 			cur_code[7 - i] = ((ch >> i) & 1) + '0';
+
+		do
+		{
+			printf("d_index = %d, cur_index = %d, decode = %s, cur_code = %s\n", d_index, cur_index, decode, cur_code);
+			decode[d_index] = cur_code[cur_index++];
+
+			// if(cur_index >= 8)
+			// 	cur_index %= 8;
+		}while(getIndexOfCode(decode, d_index++ + 1) == -1 && cur_index != 8);
+
+		printf("Out of loop! Finding for d_index = %d, decode = %s\n", d_index, decode);
+		int char_index = getIndexOfCode(decode, d_index);
+
+		if(char_index != -1)
+		{
+			d_index = 0;
+			printf("char_index = %d, Got char '%c'\n",char_index, all_codes[char_index].ch);
+		}
 		
-		if(prev_length == 0)
-		{
-			if(!isCodeFound)
-			{
-				for(int i = 0; i < 8; i++)
-				{
-					decode[i] = cur_code[i];
 
-					// int index = -1;
-					int index = getIndexOfCode(decode, i);
+		if(cur_index == 8)
+			cur_index = 0;
 
-					printf("prev_length = 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
+		
 
-					if(index == -1)
-					{
-						if(i == 7)
-							prev_length += 8;
-						continue;
-					}
+		
+		
+		// if(prev_length == 0)
+		// {
+		// 	if(!isCodeFound)
+		// 	{
+		// 		for(int i = 0; i < 8; i++)
+		// 		{
+		// 			decode[i] = cur_code[i];
 
-					else
-					{
-						printf("Got index = %d\n", index);
-						setDecode0(decode);
-						// printf("Got char: %s\n", all_codes[index].ch);
-						prev_length = i;
+		// 			// int index = -1;
+		// 			int index = getIndexOfCode(decode, i);
 
-						isCodeFound = 1;
-					}
-				}
-			}
+		// 			printf("prev_length = 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
 
-			else
-				printf("Something seriously bad happened, you shouldn't be here!!!\n");
-		}
+		// 			if(index == -1)
+		// 			{
+		// 				if(i == 7)
+		// 					prev_length += 8;
+		// 				continue;
+		// 			}
 
-		else
-		{
-			for(int i = prev_length; i < nextMulti8(prev_length); i++)
-			{
-				if(!isCodeFound)
-				{
-					decode[i] = cur_code[i - (prev_length)];
+		// 			else
+		// 			{
+		// 				printf("Got index = %d, char = %c\n", index, all_codes[index].ch);
+		// 				setDecode0(decode);
+		// 				// printf("Got char: %s\n", all_codes[index].ch);
+		// 				prev_length = i;
 
-					int index = getIndexOfCode(decode, i);
+		// 				isCodeFound = 1;
+		// 			}
+		// 		}
+		// 	}
 
-					printf("prev_length > 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
+		// 	else
+		// 		printf("Something seriously bad happened, you shouldn't be here!!!\n");
+		// }
 
-					if(index == -1)
-					{
-						if(i == nextMulti8(prev_length) - 1)
-							prev_length += i - (prev_length);
-						continue;
-					}
+		// else
+		// {
+		// 	for(int i = prev_length; i < nextMulti8(prev_length); i++)
+		// 	{
+		// 		if(!isCodeFound)
+		// 		{
+		// 			decode[i] = cur_code[i - (prev_length)];
 
-					else
-					{
-						printf("Got index = %d\n", index);
-						setDecode0(decode);
-						// printf("Got char: %s\n", all_codes[index].ch);
-						prev_length = i - (prev_length + 1);
+		// 			int index = getIndexOfCode(decode, i);
+
+		// 			printf("prev_length > 0 and i = %d and index = %d and decode = %s\n", i, index, decode);
+
+		// 			if(index == -1)
+		// 			{
+		// 				if(i == nextMulti8(prev_length) - 1)
+		// 					prev_length += i - (prev_length);
+		// 				continue;
+		// 			}
+
+		// 			else
+		// 			{
+		// 				printf("Got index = %d, char = %c\n", index, all_codes[index].ch);
+		// 				setDecode0(decode);
+		// 				// printf("Got char: %s\n", all_codes[index].ch);
+		// 				prev_length = i - (prev_length + 1);
 						
-						isCodeFound = 1;
-					}
-				}
+		// 				isCodeFound = 1;
+		// 			}
+		// 		}
 
-				else
-				{
-					isCodeFound = 0;
-					decode[i - (prev_length + 1)] = cur_code[i];
+		// 		else
+		// 		{
+		// 			isCodeFound = 0;
+		// 			decode[i - (prev_length + 1)] = cur_code[i];
 
-					int index = getIndexOfCode(decode, i - (prev_length + 1));
+		// 			int index = getIndexOfCode(decode, i - (prev_length + 1));
 
-					if(index == -1)
-					{
-						if(i == nextMulti8(prev_length + 1) - 1)
-							prev_length += i - (prev_length + 1);
-						continue;
-					}
+		// 			if(index == -1)
+		// 			{
+		// 				if(i == nextMulti8(prev_length + 1) - 1)
+		// 					prev_length += i - (prev_length + 1);
+		// 				continue;
+		// 			}
 
-					else
-					{
-						printf("Got index = %d\n", index);
-						// printf("Got char: %s\n", all_codes[index].ch);
-						prev_length = i - (prev_length + 1);
+		// 			else
+		// 			{
+		// 				printf("Got index = %d\n", index);
+		// 				// printf("Got char: %s\n", all_codes[index].ch);
+		// 				prev_length = i - (prev_length + 1);
 						
-						isCodeFound = 1;
-					}
-				}
-			}
-		}
+		// 				isCodeFound = 1;
+		// 			}
+		// 		}
+		// 	}
+		// }
 
 		// getCharFromCode(prev_code);
 		// inOrder(root);
