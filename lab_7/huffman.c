@@ -1,8 +1,7 @@
 /*
 	Author: Ananta Srikar
 
-	TODO:	- implement decoding
-			- fix encoding bug
+	TODO: Add / improve comments
 */
 
 #include<stdio.h>
@@ -61,19 +60,14 @@ int main(int argc, char **argv)
 	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
 
 	void compressFile(FILE*, FILE*, FILE*, huff_code*, int);
-	void decompressFile(FILE*, FILE*, huff_code*, MinHeapNode*);
+	void decompressFile(FILE*, FILE*, FILE*);
 
-	// printf("File: %s\n", argv[1]);
 	char cmp_name[strlen(argv[1])], dat_name[strlen(argv[1])];
 
 	strcpy(cmp_name, getRootName(argv[1]));
 	strcpy(dat_name, getRootName(argv[1]));
 	strcat(cmp_name, ".cmp");
 	strcat(dat_name, ".dat");
-
-	// printf("Root name: %s\n", getRootName(argv[1]));
-	printf("Cmp: %s\n", cmp_name);
-	printf("Dat: %s\n", dat_name);
 
 	FILE *inFPtr = NULL, *outCmpFPtr, *outDatFPtr;
 
@@ -97,14 +91,9 @@ int main(int argc, char **argv)
 	int char_num;
 	file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
 
-	printf("\n\nchar_num = %d\n\n", char_num);
-
 	MinHeapNode *root;
 
 	huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num, &root);
-
-	for(int i = 0; i < char_num; i++)
-		printf("'%c' = '%s'\n", all_codes[i].ch, all_codes[i].code);
 
 	compressFile(inFPtr, outCmpFPtr, outDatFPtr, all_codes, char_num);
 
@@ -112,10 +101,11 @@ int main(int argc, char **argv)
 	fclose(outCmpFPtr);
 	fclose(outDatFPtr);
 
-	FILE *comFPtr = NULL, *datFPtr = NULL;
+	FILE *comFPtr = NULL, *datFPtr = NULL, *outDCmpFPtr;
 
 	comFPtr = fopen(cmp_name, "rb");
 	datFPtr = fopen(dat_name, "r");
+	outDCmpFPtr = fopen("decompressed-out.txt", "w");
 
 	if(comFPtr == NULL || datFPtr == NULL)
 	{
@@ -123,10 +113,11 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	decompressFile(comFPtr, datFPtr, all_codes, root);
+	decompressFile(comFPtr, datFPtr, outDCmpFPtr);
 
 	fclose(comFPtr);
 	fclose(datFPtr);
+	fclose(outDCmpFPtr);
 
 	return(0);
 }
@@ -300,9 +291,6 @@ file_char *getCharFreq(FILE *inFPtr, int *char_num)
 		file_char_root[i].freq = temp -> freq;
 	}
 
-	for(int i = 0; i < char_cnt; i++)
-		printf("'%c': %d\n", file_char_root[i].ch, file_char_root[i].freq);
-
 	return file_char_root;
 }
 
@@ -405,7 +393,6 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root
 	// a new node to Min Heap
 	void insertMinHeap(struct MinHeap* minHeap, struct MinHeapNode* minHeapNode)
 	{
-
 		++minHeap -> size;
 		int i = minHeap -> size - 1;
 
@@ -422,7 +409,6 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root
 	// A standard function to build min heap
 	void buildMinHeap(struct MinHeap* minHeap)
 	{
-
 		int n = minHeap -> size - 1;
 		int i;
 
@@ -508,7 +494,6 @@ huff_code *getHuffmanTree(file_char *all_char_freq, int size, MinHeapNode **root
 	// It uses arr[] to store codes
 	void printCodes(struct MinHeapNode* root, int arr[], int top, huff_code all_codes[], int size)
 	{
-
 		// Assign 0 to left edge and recur
 		if (root -> left)
 		{
@@ -581,7 +566,17 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 
 	int max_code_length = strlen(all_codes[0].code);
 
-	fprintf(outDatFPtr, "%d\n%d", max_code_length, size);
+	fwrite(&max_code_length, sizeof(int), 1, outDatFPtr);
+	fwrite(&size, sizeof(int), 1, outDatFPtr);
+
+	for(int i = 0; i < size; i++)
+	{
+		int cur_length = strlen(all_codes[i].code);
+		
+		fwrite(&all_codes[i].ch, sizeof(char), 1, outDatFPtr);
+		fwrite(&cur_length, sizeof(int), 1, outDatFPtr);
+		fwrite(all_codes[i].code, sizeof(char), cur_length, outDatFPtr);
+	}
 
 	void resetPrevCode(char prev_code[])
 	{
@@ -600,8 +595,6 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 	{
 		unsigned char ch = 0;
 
-		// printf("Writing code : %s\n", code);
-
 		for(int i = 0; i < 8; i++)
 			if(code[i] == '1')
 				ch += pow(2, (7 - (i % 8)));
@@ -615,8 +608,6 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 	void writeToFile(char *code)
 	{
 		int code_length = strlen(code);
-
-		// printf("prev_length = %d and code_length = %d\n", prev_length, code_length);
 
 		if(prev_length == 0)
 		{
@@ -655,8 +646,6 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 				for(int i = prev_length; i < 8; i++)
 					write_code[i] = code[i - prev_length];
 
-				// printf("prev_length = %d, code_length = %d, writing code: %s\n", prev_length, code_length, write_code);
-
 				writeByteToFile(write_code);
 				
 				prev_length = 0;
@@ -693,20 +682,32 @@ void compressFile(FILE *inFPtr, FILE *outCmpFPtr, FILE* outDatFPtr, huff_code *a
 
 		char *code = getCode(ch);
 		writeToFile(code);
-		// printf("'%c': '%s'\n", ch, code);
 	}
 }
 
-// TODO: Finish decompression algorithm
-void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinHeapNode *root)
+// Function to decompress a compressed file
+void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, FILE* outFPtr)
 {
 	unsigned char ch = 0;
+	
+	int max_code_length, size, cur_length, d_index = 0;
 
-	int max_code_length, size;
+	fread(&max_code_length, sizeof(int), 1, inDatFPtr);
+	fread(&size, sizeof(int), 1, inDatFPtr);
 
-	fscanf(inDatFPtr, "%d\n%d", &max_code_length, &size);
+	char cur_code[8], decode[max_code_length];
 
-	printf("max_code_length = %d\nsize = %d\n", max_code_length, size);
+	huff_code *all_codes = (huff_code*)malloc(size * sizeof(huff_code));
+
+	for(int i = 0; i < size; i++)
+	{
+		fread(&all_codes[i].ch, sizeof(char), 1, inDatFPtr);
+		fread(&cur_length, sizeof(int), 1, inDatFPtr);
+
+		all_codes[i].code = (char*)malloc(sizeof(char) * cur_length);
+
+		fread(all_codes[i].code, sizeof(char), cur_length, inDatFPtr);
+	}
 
 	/*
 		Implementing manual string checking instead of using strcmp because
@@ -737,21 +738,8 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 		return -1;
 	}
 
-	void setDecode0(char decode[])
+	while(fread(&ch, sizeof(ch), 1, inCmpFPtr))
 	{
-		for(int i = 0; i < max_code_length; i++)
-			decode[i] = '0';
-	}
-
-	char cur_code[8], decode[max_code_length];
-	int cur_index = 0, d_index = 0;
-
-	setDecode0(decode);
-
-	while(!feof(inCmpFPtr))
-	{
-		fread(&ch, sizeof(ch), 1, inCmpFPtr);
-
 		// Getting the stream of bits for decoding
 		for(int i = 7; i >= 0; i--)
 			cur_code[7 - i] = ((ch >> i) & 1) + '0';
@@ -762,10 +750,7 @@ void decompressFile(FILE *inCmpFPtr, FILE *inDatFPtr, huff_code *all_codes, MinH
 
 			if(getIndexOfCode(decode, d_index + 1) != -1)
 			{
-				int char_index = getIndexOfCode(decode, d_index + 1);
-				
-				printf("Got char: %c\n", all_codes[char_index].ch);
-
+				fprintf(outFPtr, "%c", all_codes[getIndexOfCode(decode, d_index + 1)].ch);
 				d_index = -1;
 			}
 		}
