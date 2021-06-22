@@ -43,9 +43,6 @@ typedef struct huff_code huff_code;
 int main(int argc, char **argv)
 {
 	// Initial code to get all command line values
-
-	printf("argc = %d\n", argc);
-	
 	if(argc != 3)
 	{
 		printf("Incorrect number of arguments! Please go through README.md\n");
@@ -101,7 +98,7 @@ int main(int argc, char **argv)
 					strcat(dat_name, ".dat");
 
 					outCmpFPtr = fopen(cmp_name, "wb");
-					outDatFPtr = fopen(dat_name, "w");
+					outDatFPtr = fopen(dat_name, "wb");
 
 					int char_num;
 					file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
@@ -110,7 +107,11 @@ int main(int argc, char **argv)
 
 					huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num, &root);
 
+					printf("\nCompressing %s into %s.cmp...\n", argv[2], getRootName(argv[2]));
+
 					compressFile(inFPtr, outCmpFPtr, outDatFPtr, all_codes, char_num);
+
+					printf("Finished compression\n");
 
 					fclose(inFPtr);
 					fclose(outCmpFPtr);
@@ -125,28 +126,36 @@ int main(int argc, char **argv)
 
 					FILE *comFPtr = NULL, *datFPtr = NULL, *outDCmpFPtr;
 
-					char cmp_name[strlen(argv[2])], dat_name[strlen(argv[2])];
+					char cmp_name[strlen(argv[2])], dat_name[strlen(argv[2])], decom_name[strlen(argv[2]) + 5];
 
 					strcpy(cmp_name, getRootName(argv[2]));
 					strcpy(dat_name, getRootName(argv[2]));
+					strcpy(decom_name, getRootName(argv[2]));
+
 					strcat(cmp_name, ".cmp");
 					strcat(dat_name, ".dat");
+					strcat(decom_name, "-dcom.txt");
 
 					comFPtr = fopen(cmp_name, "rb");
-					datFPtr = fopen(dat_name, "r");
-					outDCmpFPtr = fopen("decompressed-out.txt", "w");
+					datFPtr = fopen(dat_name, "rb");
+					outDCmpFPtr = fopen(decom_name, "w");
 
 					if(comFPtr == NULL || datFPtr == NULL)
 					{
-						printf("Unable to open compressed file :(\n");
+						printf("Unable to open compressed file, does it exist?\n");
 						return -1;
 					}
 
+					printf("\nStarting decompression of %s..\n", cmp_name);
+
 					decompressFile(comFPtr, datFPtr, outDCmpFPtr);
+
+					printf("Decompressed into %s\n", decom_name);
 
 					fclose(comFPtr);
 					fclose(datFPtr);
 					fclose(outDCmpFPtr);
+
 					break;
 				}
 		
