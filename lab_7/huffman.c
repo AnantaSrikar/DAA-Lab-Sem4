@@ -43,81 +43,116 @@ typedef struct huff_code huff_code;
 int main(int argc, char **argv)
 {
 	// Initial code to get all command line values
+
+	printf("argc = %d\n", argc);
 	
-	if(argc != 2)
+	if(argc != 3)
 	{
 		printf("Incorrect number of arguments! Please go through README.md\n");
+		return -1;
+	}
+	
+	if(strlen(argv[1]) != 1 || (argv[1][0] != 'c' && argv[1][0] != 'd'))
+	{
+		printf("Incorrect argument entered! Try again or go through README.md\n");
 		return -1;
 	}
 
 	// End of command line arguments
 
-	// Function prototypes
-	int isTxtFile(char[]);
+	// Commong function prototypes
 	char *getRootName(char[]);
 
-	file_char *getCharFreq(FILE*, int*);
-	huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
-
-	void compressFile(FILE*, FILE*, FILE*, huff_code*, int);
-	void decompressFile(FILE*, FILE*, FILE*);
-
-	char cmp_name[strlen(argv[1])], dat_name[strlen(argv[1])];
-
-	strcpy(cmp_name, getRootName(argv[1]));
-	strcpy(dat_name, getRootName(argv[1]));
-	strcat(cmp_name, ".cmp");
-	strcat(dat_name, ".dat");
-
-	FILE *inFPtr = NULL, *outCmpFPtr, *outDatFPtr;
-
-	inFPtr = fopen(argv[1], "r");
-	outCmpFPtr = fopen(cmp_name, "wb");
-	outDatFPtr = fopen(dat_name, "w");
-
-	// Check if the file is a txt file
-	if(!isTxtFile(argv[1]))
+	switch(argv[1][0])
 	{
-		printf("Given file is NOT a text file! Please check and try again.");
-		return -1;
+		case 'c':
+				{
+					// Function prototypes
+					int isTxtFile(char[]);
+
+					file_char *getCharFreq(FILE*, int*);
+					huff_code *getHuffmanTree(file_char*, int, MinHeapNode**);
+
+					void compressFile(FILE*, FILE*, FILE*, huff_code*, int);
+
+					// File pointers
+					FILE *inFPtr = NULL, *outCmpFPtr, *outDatFPtr;
+
+					// Check if the file is a txt file
+					if(!isTxtFile(argv[2]))
+					{
+						printf("Given file is NOT a text file! Please check and try again.");
+						return -1;
+					}
+
+					inFPtr = fopen(argv[2], "r");
+
+					if(inFPtr == NULL)
+					{
+						printf("Failed to open %s, does the file exist?\n", argv[1]);
+						return -1;
+					}
+
+					char cmp_name[strlen(argv[2])], dat_name[strlen(argv[2])];
+
+					strcpy(cmp_name, getRootName(argv[2]));
+					strcpy(dat_name, getRootName(argv[2]));
+					strcat(cmp_name, ".cmp");
+					strcat(dat_name, ".dat");
+
+					outCmpFPtr = fopen(cmp_name, "wb");
+					outDatFPtr = fopen(dat_name, "w");
+
+					int char_num;
+					file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
+
+					MinHeapNode *root;
+
+					huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num, &root);
+
+					compressFile(inFPtr, outCmpFPtr, outDatFPtr, all_codes, char_num);
+
+					fclose(inFPtr);
+					fclose(outCmpFPtr);
+					fclose(outDatFPtr);
+
+					break;
+				}
+
+		case 'd':
+				{
+					void decompressFile(FILE*, FILE*, FILE*);
+
+					FILE *comFPtr = NULL, *datFPtr = NULL, *outDCmpFPtr;
+
+					char cmp_name[strlen(argv[2])], dat_name[strlen(argv[2])];
+
+					strcpy(cmp_name, getRootName(argv[2]));
+					strcpy(dat_name, getRootName(argv[2]));
+					strcat(cmp_name, ".cmp");
+					strcat(dat_name, ".dat");
+
+					comFPtr = fopen(cmp_name, "rb");
+					datFPtr = fopen(dat_name, "r");
+					outDCmpFPtr = fopen("decompressed-out.txt", "w");
+
+					if(comFPtr == NULL || datFPtr == NULL)
+					{
+						printf("Unable to open compressed file :(\n");
+						return -1;
+					}
+
+					decompressFile(comFPtr, datFPtr, outDCmpFPtr);
+
+					fclose(comFPtr);
+					fclose(datFPtr);
+					fclose(outDCmpFPtr);
+					break;
+				}
+		
+		default:
+					printf("Nani?\n");
 	}
-
-	if(inFPtr == NULL)
-	{
-		printf("Failed to open %s, does the file exist?\n", argv[1]);
-		return -1;
-	}
-
-	int char_num;
-	file_char *all_char_freqs = getCharFreq(inFPtr, &char_num);
-
-	MinHeapNode *root;
-
-	huff_code *all_codes = getHuffmanTree(all_char_freqs, char_num, &root);
-
-	compressFile(inFPtr, outCmpFPtr, outDatFPtr, all_codes, char_num);
-
-	fclose(inFPtr);
-	fclose(outCmpFPtr);
-	fclose(outDatFPtr);
-
-	FILE *comFPtr = NULL, *datFPtr = NULL, *outDCmpFPtr;
-
-	comFPtr = fopen(cmp_name, "rb");
-	datFPtr = fopen(dat_name, "r");
-	outDCmpFPtr = fopen("decompressed-out.txt", "w");
-
-	if(comFPtr == NULL || datFPtr == NULL)
-	{
-		printf("Unable to open compressed file :(\n");
-		return -1;
-	}
-
-	decompressFile(comFPtr, datFPtr, outDCmpFPtr);
-
-	fclose(comFPtr);
-	fclose(datFPtr);
-	fclose(outDCmpFPtr);
 
 	return(0);
 }
