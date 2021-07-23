@@ -1,7 +1,7 @@
 /*
-	Author: Ananta Srikar
+	Program to compress and decompress text files using Huffman Encoding.
 
-	TODO: Add / improve comments
+	Author: Ananta Srikar
 */
 
 #include<stdio.h>
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
 					if(inFPtr == NULL)
 					{
-						printf("Failed to open %s, does the file exist?\n", argv[1]);
+						printf("Failed to open %s, does the file exist?\n", argv[2]);
 						return -1;
 					}
 
